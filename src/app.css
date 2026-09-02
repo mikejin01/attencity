@@ -1,0 +1,129 @@
+/* =====================================================================
+   Attencity — global styles.
+   Theme-agnostic reset + the Editorial token set + the shared form/modal
+   primitives. Everything else (navbar, hero, sections, footer) lives in
+   src/lib/editorial/editorial.css.
+   The `.theme-editorial` class is set on <body> in src/app.html.
+   ===================================================================== */
+
+/* ---------- Reset / base ---------- */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+img{max-width:100%;display:block}
+button{font:inherit;color:inherit;cursor:pointer;background:none;border:none}
+a{color:inherit;text-decoration:none}
+input,select,textarea{font:inherit}
+
+:root{
+  --ease:cubic-bezier(.22,.61,.36,1);
+}
+
+body{
+  font-family:var(--font-body,'Inter',sans-serif);
+  background:var(--bg);
+  color:var(--text);
+  line-height:1.6;
+  overflow-x:hidden;
+}
+
+/* ================================================================
+   THEME TOKENS — EDITORIAL
+   These power the shared contact modal + form fields. The page itself
+   defines its own light-first palette (--ink, --orange, …) in editorial.css.
+   ================================================================ */
+.theme-editorial{
+  --bg:#242526; --bg-alt:#1e1d1c; --surface:#2b2c2e; --surface-2:#343536;
+  --text:#ffffff; --text-soft:rgba(255,255,255,.75); --text-faint:rgba(255,255,255,.5);
+  --accent:#ff5000; --accent-2:#e04500; --accent-ink:#ffffff;
+  --border:rgba(255,255,255,.14); --border-strong:rgba(255,255,255,.28);
+  --radius:16px; --radius-lg:20px; --btn-radius:980px; --field-radius:12px;
+  --maxw:1220px; --gutter:clamp(20px,5vw,72px); --section-pad:clamp(80px,11vw,140px);
+  --font-display:'Barlow Condensed',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  --font-body:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  --h-transform:none; --h-spacing:-.01em; --h-weight:700; --h-lh:1.1;
+  --eyebrow-spacing:.12em;
+  --shadow:0 30px 80px -40px rgba(0,0,0,.9);
+}
+
+/* ================================================================
+   SHARED PRIMITIVES
+   ================================================================ */
+h1,h2,h3{font-family:var(--font-display);font-weight:var(--h-weight);line-height:var(--h-lh);letter-spacing:var(--h-spacing);text-transform:var(--h-transform)}
+
+.eyebrow{
+  font-family:var(--font-body);
+  font-size:clamp(10px,1vw,12px);
+  letter-spacing:var(--eyebrow-spacing);
+  text-transform:uppercase;font-weight:500;color:var(--accent);
+}
+
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:.5em;
+  font-family:var(--font-body);
+  font-size:13px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;
+  padding:15px 30px;border:1px solid transparent;border-radius:var(--btn-radius);
+  transition:all .25s var(--ease);white-space:nowrap;
+}
+.btn-primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn-primary:hover{background:var(--accent-2);border-color:var(--accent-2)}
+.btn-ghost{background:transparent;color:var(--text);border-color:var(--border-strong)}
+.btn-ghost:hover{background:var(--text);color:var(--bg)}
+
+/* reveal-on-scroll action (src/lib/actions.js) */
+.reveal{opacity:0;transform:translateY(26px);transition:opacity .9s var(--ease),transform .9s var(--ease)}
+.reveal.in{opacity:1;transform:none}
+
+/* ================================================================
+   MODAL + FORM SUCCESS STATES  (contact modal / contact form)
+   ================================================================ */
+.modal-backdrop{position:fixed;inset:0;z-index:10000;background:rgba(8,8,10,.62);backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;animation:fadeIn .25s ease forwards}
+@keyframes fadeIn{to{opacity:1}}
+.modal{position:relative;background:var(--surface);color:var(--text);width:min(540px,100%);border-radius:var(--radius-lg);
+  border:1px solid var(--border);box-shadow:0 40px 100px -30px rgba(0,0,0,.6);max-height:92vh;overflow:auto;
+  transform:translateY(14px);animation:modalIn .32s var(--ease) forwards}
+@keyframes modalIn{to{transform:none}}
+.modal-inner{padding:clamp(28px,4vw,46px)}
+.modal .eyebrow{color:var(--accent);display:block;margin-bottom:8px}
+.modal h3{font-family:var(--font-display);font-size:clamp(26px,3.4vw,40px);text-transform:none;letter-spacing:normal;margin-bottom:6px}
+.modal .modal-sub{color:var(--text-soft);font-size:14px;margin-bottom:26px}
+.modal-x{position:absolute;top:16px;right:16px;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--text-soft);border:1px solid var(--border);z-index:2}
+.modal-x:hover{background:var(--surface-2);color:var(--text)}
+.modal-x svg{width:18px;height:18px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field.full{grid-column:1 / -1}
+.field label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-soft);font-weight:600}
+.field input,.field select,.field textarea{
+  padding:12px 14px;background:var(--bg-alt);border:1px solid var(--border-strong);
+  border-radius:var(--field-radius);color:var(--text);outline:none;transition:border-color .2s;
+}
+.field textarea{resize:vertical;min-height:70px}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+.field.invalid input,.field.invalid select,.field.invalid textarea{border-color:#d9483b}
+.field .err{color:#d9483b;font-size:12px;min-height:1em}
+.form-actions{margin-top:24px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.form-actions .btn{flex:1;min-width:160px}
+.form-note{font-size:12px;color:var(--text-faint);margin-top:16px;line-height:1.6}
+.form-success{text-align:center;padding:12px 0 6px}
+.form-success .check-circle{width:66px;height:66px;border-radius:50%;border:2px solid currentColor;color:var(--accent);
+  display:flex;align-items:center;justify-content:center;margin:0 auto 22px}
+.form-success .check-circle svg{width:30px;height:30px}
+.form-success h3{font-family:var(--font-display);text-transform:none;letter-spacing:normal;font-size:clamp(24px,3vw,34px);margin-bottom:10px}
+.form-success p{color:var(--text-soft);font-size:15px;max-width:38ch;margin:0 auto 6px}
+
+/* ================================================================
+   RESPONSIVE
+   ================================================================ */
+@media(max-width:560px){
+  .form-grid{grid-template-columns:1fr}
+}
+
+@media(prefers-reduced-motion:reduce){
+  *{animation:none !important}
+  .reveal{opacity:1 !important;transform:none !important;transition:none}
+  /* the modal's entrance keyframes carry it from opacity 0 → 1; without them it must start visible */
+  .modal-backdrop{opacity:1}
+  .modal{transform:none}
+  html{scroll-behavior:auto}
+}
