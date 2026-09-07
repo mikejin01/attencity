@@ -1,0 +1,15 @@
+// One prerendered page per published case study. The body component is
+// globbed inside +page.svelte, so only the slug travels in the payload.
+import { error } from '@sveltejs/kit';
+import { caseStudies, caseStudyBySlug } from '$lib/content/posts.js';
+
+export const prerender = true;
+
+export function entries() {
+	return caseStudies.map((p) => ({ slug: p.slug }));
+}
+
+export function load({ params }) {
+	if (!caseStudyBySlug[params.slug]) error(404, `Unknown case study: ${params.slug}`);
+	return { slug: params.slug };
+}

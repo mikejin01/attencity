@@ -1,6 +1,6 @@
 <!-- "Why ATTENCITY" — dark band, billboard image left, four icon items right (plan §4.4). -->
 <script>
-	import { home, whyPoints, asset, srcset } from '$lib/content/attencity.js';
+	import { home, whyPoints, asset, srcset, dims } from '$lib/content/attencity.js';
 	import { lineIcons } from '$lib/editorial/icons.js';
 	import { reveal } from '$lib/actions.js';
 	const w = home.why;
@@ -10,11 +10,12 @@
 	<div class="container container--lg">
 		<div class="why-grid">
 			<figure class="why-media" use:reveal>
-				<img src={asset(w.image)} srcset={srcset(w.image, w.imageWidth)} sizes="(min-width: 992px) 38vw, 100vw" alt={w.alt} loading="lazy" decoding="async" width="1236" height="1600" />
+				<img src={asset(w.image)} srcset={srcset(w.image) || undefined} sizes="(min-width: 992px) 38vw, 100vw" alt={w.alt} loading="lazy" decoding="async" width={dims(w.image)?.width} height={dims(w.image)?.height} />
 			</figure>
 			<div class="why-body">
 				<span class="title-rule"></span>
 				<h2 class="section-title">{w.title}</h2>
+				<p class="why-lead">{w.lead}</p>
 				<ul class="why-list">
 					{#each whyPoints as p (p.title)}
 						<li class="why-item" use:reveal>

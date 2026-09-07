@@ -9,3 +9,15 @@ node_modules
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .playwright-cli
+
+# Business Deck source files: 154 MB of rendered slides + the PPTX. The
+# extracted originals the build actually needs live in docs/source/deck-media/
+# (plan §2). Keep these locally; don't push them.
+/docs/Business Deck/
+/docs/\[EN\] Attencity 2026 Business Deck v1.pptx
+
+# static/CNAME is held back until attencity.com's DNS points at GitHub Pages
+# (apex A records -> 185.199.108-111.153). Committing it earlier makes GitHub
+# redirect the github.io URL to a domain the old host still serves, so the new
+# build goes dark. Remove this line and commit the file once DNS is switched.
+/static/CNAME

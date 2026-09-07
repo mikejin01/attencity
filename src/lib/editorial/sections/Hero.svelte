@@ -4,12 +4,17 @@
      (the dots still work there). The first slide is the LCP image and is preloaded. -->
 <script>
 	import { onMount } from 'svelte';
-	import { home, asset, route, srcset } from '$lib/content/attencity.js';
+	import { home, asset, route, srcset, dims } from '$lib/content/attencity.js';
 	import { openContact } from '$lib/contact.svelte.js';
 	const h = home.hero;
 	const slides = h.slides;
 
 	let active = $state(0);
+	/** Only the first slide is fetched with the document — it is the LCP image.
+	 *  The rest are ~100 KB each and none can be seen for at least `interval`
+	 *  ms, so we fetch one slide ahead of the rotation: the next one arrives
+	 *  when the browser is idle, and the others only if the visitor stays. */
+	let maxLoaded = $state(0);
 	let timer;
 
 	const stop = () => {
@@ -22,12 +27,18 @@
 		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 		timer = setInterval(() => (active = (active + 1) % slides.length), h.interval);
 	};
+	// keep one slide in hand ahead of whatever is on screen
+	$effect(() => {
+		if (active + 1 > maxLoaded) maxLoaded = active + 1;
+	});
 	const goTo = (i) => {
 		active = i;
 		start(); // restart the countdown from the slide the user picked
 	};
 
 	onMount(() => {
+		const idle = window.requestIdleCallback ?? ((fn) => setTimeout(fn, 1500));
+		idle(() => (maxLoaded = Math.max(maxLoaded, 1)));
 		start();
 		document.addEventListener('visibilitychange', start);
 		return () => {
@@ -39,7 +50,7 @@
 
 <svelte:head>
 	<!-- the first slide is the LCP element on every visit — fetch it before the CSS/JS bundles finish -->
-	<link rel="preload" as="image" imagesrcset={srcset(slides[0].image, slides[0].width)} imagesizes="100vw" fetchpriority="high" />
+	<link rel="preload" as="image" imagesrcset={srcset(slides[0].image)} imagesizes="100vw" fetchpriority="high" />
 </svelte:head>
 
 <div class="page-header">
@@ -50,11 +61,11 @@
 				<img
 					class="hero-img hero-slide"
 					class:is-active={i === active}
-					src={asset(s.image)}
-					srcset={srcset(s.image, s.width)}
+					src={i <= maxLoaded ? asset(s.image) : null}
+					srcset={i <= maxLoaded && srcset(s.image) ? srcset(s.image) : null}
 					sizes="100vw"
-					width={s.width}
-					height={s.height}
+					width={dims(s.image)?.width}
+					height={dims(s.image)?.height}
 					alt=""
 					style="object-position: {s.position ?? 'center'}"
 					fetchpriority={i === 0 ? 'high' : 'low'}

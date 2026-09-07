@@ -28,6 +28,7 @@
 		<div
 			class="modal"
 			role="dialog"
+			tabindex="-1"
 			aria-modal="true"
 			aria-labelledby="contact-modal-title"
 			bind:this={dialogEl}
@@ -40,7 +41,7 @@
 				<span class="eyebrow">{copy.eyebrow}</span>
 				<h3 id="contact-modal-title">{copy.title}</h3>
 				<p class="modal-sub">{copy.sub}</p>
-				<ContactForm idPrefix="modal" submitLabel="Send message" ondone={closeContact} />
+				<ContactForm idPrefix="modal" formLocation="modal" submitLabel="Send message" ondone={closeContact} />
 			</div>
 		</div>
 	</div>

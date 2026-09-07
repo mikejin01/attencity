@@ -1,6 +1,11 @@
 // Shared state for the "Get in touch" modal + the one place that decides how a
-// contact message is delivered (plan §8 Q1). Used by ContactForm on the home
-// CTA, the contact page, and the modal.
+// contact message is delivered. Used by ContactForm on the home CTA, the
+// contact page, every service CTA, and the modal.
+//
+// Delivery order (plan §6.3):
+//   endpoint → the Cloudflare Worker relay (email + Flodesk upsert)
+//   mailto   → pre-filled mail client, so a message is never silently lost
+//   none     → the form says plainly that it is not connected yet
 import { contactConfig } from '$lib/content/attencity.js';
 
 export const contactModal = $state({ open: false });
@@ -20,10 +25,23 @@ export const deliveryMode = contactConfig.formEndpoint
 		? 'mailto'
 		: 'none';
 
+const mailtoBody = (d) =>
+	[
+		`Name: ${d.name}`,
+		`Email: ${d.email}`,
+		`Company: ${d.company || '—'}`,
+		`Job title: ${d.job_title || '—'}`,
+		`How they heard about us: ${d.heard_from || '—'}`,
+		`Newsletter opt-in: ${d.newsletter_optin ? 'yes' : 'no'}`,
+		`Page: ${d.page || '—'}`,
+		'',
+		d.message
+	].join('\n');
+
 /**
- * Deliver a message. Resolves to the mode used so the form can word its
- * success state honestly. Throws when an endpoint rejects the request.
- * @param {{name:string,email:string,company:string,message:string}} data
+ * Deliver a lead. Resolves to the mode used so the form can word its success
+ * state honestly. Throws when an endpoint rejects the request.
+ * @param {Record<string, any>} data — visitor fields plus the hidden channel fields
  */
 export async function sendMessage(data) {
 	if (deliveryMode === 'endpoint') {
@@ -37,10 +55,7 @@ export async function sendMessage(data) {
 	}
 	if (deliveryMode === 'mailto') {
 		const subject = encodeURIComponent(`Website enquiry from ${data.name}`);
-		const body = encodeURIComponent(
-			`Name: ${data.name}\nEmail: ${data.email}\nCompany: ${data.company || '—'}\n\n${data.message}`
-		);
-		window.location.href = `mailto:${contactConfig.email}?subject=${subject}&body=${body}`;
+		window.location.href = `mailto:${contactConfig.email}?subject=${subject}&body=${encodeURIComponent(mailtoBody(data))}`;
 		return 'mailto';
 	}
 	return 'none';

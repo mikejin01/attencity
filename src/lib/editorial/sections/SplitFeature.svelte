@@ -2,7 +2,7 @@
      Individual" (home, §4.5) and the About intro (§5.2). Extra body content
      goes in the `children` snippet. -->
 <script>
-	import { asset, route } from '$lib/content/attencity.js';
+	import { asset, srcset, dims, route } from '$lib/content/attencity.js';
 	import { reveal } from '$lib/actions.js';
 	/** @type {{ id?: string, eyebrow?: string, title: string, lead?: string, image: string, alt?: string,
 	 *  cta?: {label: string, href: string}, band?: 'white'|'alt', mediaLeft?: boolean, children?: import('svelte').Snippet }} */
@@ -24,7 +24,16 @@
 				{/if}
 			</div>
 			<figure class="split__media" use:reveal>
-				<img src={asset(image)} {alt} loading="lazy" decoding="async" />
+				<img
+					src={asset(image)}
+					srcset={srcset(image) || undefined}
+					sizes="(min-width: 900px) 45vw, 100vw"
+					width={dims(image)?.width}
+					height={dims(image)?.height}
+					{alt}
+					loading="lazy"
+					decoding="async"
+				/>
 			</figure>
 		</div>
 	</div>

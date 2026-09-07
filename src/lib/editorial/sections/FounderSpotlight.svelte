@@ -1,7 +1,7 @@
 <!-- Founder spotlight (About): square portrait card + short bio + at-a-glance facts.
      Copy lives in aboutPage.founder. Reuses the split-feature grid. -->
 <script>
-	import { aboutPage, asset } from '$lib/content/attencity.js';
+	import { aboutPage, asset, dims } from '$lib/content/attencity.js';
 	import { reveal } from '$lib/actions.js';
 	const f = aboutPage.founder;
 </script>
@@ -27,7 +27,7 @@
 				</dl>
 			</div>
 			<figure class="split__media founder__media" use:reveal>
-				<img src={asset(f.image)} alt={f.alt} loading="lazy" decoding="async" width="1080" height="1080" />
+				<img src={asset(f.image)} alt={f.alt} loading="lazy" decoding="async" width={dims(f.image)?.width} height={dims(f.image)?.height} />
 			</figure>
 		</div>
 	</div>

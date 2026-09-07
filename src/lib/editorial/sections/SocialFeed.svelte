@@ -60,7 +60,7 @@
 	<div class="container container--md">
 		<div class="content-blocks text-center">
 			<div class="content-blocks__block"><span class="section-eyebrow">{s.eyebrow}</span></div>
-			<div class="content-blocks__block"><h2 class="section-title">{s.title}</h2></div>
+			<div class="content-blocks__block"><h2 class="section-title"><a class="social-title-link" href={s.href} target="_blank" rel="noopener noreferrer">{s.title}</a></h2></div>
 		</div>
 	</div>
 	<div class="container container--fluid">

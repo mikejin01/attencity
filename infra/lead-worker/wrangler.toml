@@ -1,0 +1,19 @@
+name = "attencity-lead"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+
+# Origins allowed to POST /lead. Keep this tight — it is the only thing
+# stopping someone else's page from filling the team inbox.
+[vars]
+ALLOWED_ORIGINS = "https://attencity.com,https://www.attencity.com,http://localhost:5173,http://localhost:4173"
+NOTIFY_FROM = "Attencity website <website@attencity.com>"
+FLODESK_SEGMENT_LEADS = ""       # id of the "Website leads" segment
+FLODESK_SEGMENT_NEWSLETTER = ""  # id of the "Newsletter" segment
+FLODESK_DOUBLE_OPTIN = "false"
+
+# Secrets — set with `wrangler secret put <NAME>`, never in this file:
+#   FLODESK_API_KEY    Flodesk → Settings → Integrations → API
+#   RESEND_API_KEY     resend.com API key for the notification email
+#   NOTIFY_TO          team inbox, e.g. communications@attencity.com
+#   TURNSTILE_SECRET   optional; only needed once Turnstile is enabled
+#   SHEET_WEBHOOK_URL  optional; Google Apps Script webhook for a sheet row
