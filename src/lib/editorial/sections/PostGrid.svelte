@@ -18,7 +18,7 @@
 	{id}
 >
 	<div class="container container--lg">
-		{#if title || eyebrow}
+		{#if title || eyebrow || sub}
 			<div class="content-blocks text-center" use:reveal>
 				{#if eyebrow}<div class="content-blocks__block"><span class="section-eyebrow">{eyebrow}</span></div>{/if}
 				{#if title}
