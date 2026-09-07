@@ -231,6 +231,48 @@ def do_logo(src, rel):
     return f"{rel}.png {im.width}x{im.height} {dest.stat().st_size // 1024}KB", dest
 
 
+# --- home service cards -----------------------------------------------------
+# The six "Services for Company" cards are portrait crops (4:5) rendered at
+# ~453-513 CSS px wide. They are cut from the full-resolution deck originals
+# rather than reusing a page hero, so the crop can be aimed at the subject.
+# `focus` is (x, y) in 0-1: the point of the source kept centred in the crop.
+CARD_SIZE = (900, 1125)
+
+CARDS = [
+    # MiPalette's custom compact in hand — a brand made tangible
+    (DECK / "s25-05-image232.png", "services/brand-strategy-localization.webp", (0.50, 0.45)),
+    # F4D honoree mid-interview, mic and camera in frame
+    (DECK / "s17-05-image200.jpg", "services/media-pr.webp", (0.50, 0.38)),
+    # Influencer party at The Rose, under the ROSE sign
+    (DECK / "s29-01-image254.jpg", "services/social-influencer-marketing.webp", (0.50, 0.40)),
+    # CES stage: the "Go Global at CES" screen is the subject, not the speaker
+    (DECK / "s15-01-image181.jpg", "services/geo-generative-engine-optimization.webp", (0.26, 0.40)),
+    # Ellicor opening — shoppers, product, a till
+    (DECK / "s27-01-image238.jpg", "services/ecommerce-growth.webp", (0.50, 0.45)),
+    # Warm brand-event crowd in the brick room
+    (DECK / "s28-07-image245.jpg", "services/events-activations.webp", (0.50, 0.42)),
+]
+
+
+def do_card(src, rel, focus):
+    dest = OUT / rel
+    if dest.exists() and not FORCE:
+        return "skip"
+    im = load(src).convert("RGB")
+    tw, th = CARD_SIZE
+    scale = max(tw / im.width, th / im.height)
+    if scale < 1:  # only ever downscale the source, never blow it up to fit
+        im = im.resize((round(im.width * scale), round(im.height * scale)), Image.LANCZOS)
+    # crop the 4:5 window, centred on the focal point and clamped to the frame
+    cw = min(im.width, round(im.height * tw / th))
+    ch = min(im.height, round(cw * th / tw))
+    left = max(0, min(im.width - cw, round(im.width * focus[0] - cw / 2)))
+    top = max(0, min(im.height - ch, round(im.height * focus[1] - ch / 2)))
+    im = im.crop((left, top, left + cw, top + ch)).resize(CARD_SIZE, Image.LANCZOS)
+    size = save_webp(im, dest, 130_000)
+    return f"{rel} {tw}x{th} {size // 1024}KB"
+
+
 # --- Open Graph cards -------------------------------------------------------
 # One 1200x630 PNG per page that has its own hero, cropped from that hero with
 # a dark scrim and the white lockup bottom-left. Social crawlers get a branded,
@@ -328,7 +370,7 @@ def write_sizes():
 
 
 if __name__ == "__main__":
-    missing = [str(s) for s, *_ in PHOTOS + LOGOS if not s.exists()]
+    missing = [str(s) for s, *_ in PHOTOS + LOGOS + CARDS if not s.exists()]
     if missing:
         sys.exit("missing sources:\n  " + "\n  ".join(missing))
     n = 0
@@ -339,6 +381,11 @@ if __name__ == "__main__":
             print(msg)
     for src, rel in LOGOS:
         msg, _ = do_logo(src, rel)
+        if msg != "skip":
+            n += 1
+            print(msg)
+    for src, rel, focus in CARDS:
+        msg = do_card(src, rel, focus)
         if msg != "skip":
             n += 1
             print(msg)

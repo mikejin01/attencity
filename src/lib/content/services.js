@@ -18,8 +18,8 @@ export const services = [
 		audience: 'company',
 		title: 'Brand Strategy & Localization',
 		navTitle: 'Brand Strategy & Localization',
-		image: 'services/brand-strategy.webp',
-		imageAlt: 'A camouflage-wrapped concept car on a trade-show floor with visitors talking beside it',
+		image: 'services/brand-strategy-localization.webp',
+		imageAlt: 'A hand holding an open custom MiPalette compact in front of a display wall of colour pans',
 		short:
 			'Culturally grounded positioning and narrative that help brands be understood, trusted, and adopted in new markets.',
 		summary:
@@ -79,7 +79,7 @@ export const services = [
 		title: 'Media & PR',
 		navTitle: 'Media & PR',
 		image: 'services/media-pr.webp',
-		imageAlt: 'A spokesperson speaking to camera in front of floor-to-ceiling windows',
+		imageAlt: 'An honoree being interviewed on camera, microphone in frame, at the F4D luncheon',
 		short:
 			'PR as a long-term brand asset: structured media strategies that move brands from attention to authority.',
 		summary:
@@ -138,8 +138,8 @@ export const services = [
 		audience: 'company',
 		title: 'Social Media & Influencer Marketing',
 		navTitle: 'Social & Influencer',
-		image: 'services/social-influencer.webp',
-		imageAlt: 'Two guests posing at an Attencity × StarHub influencer party backdrop',
+		image: 'services/social-influencer-marketing.webp',
+		imageAlt: 'A crowd of creators at an Attencity influencer party beneath the ROSE sign',
 		short:
 			'Platform-specific strategies, creator collaborations, and content ecosystems that build social credibility.',
 		summary:
@@ -198,8 +198,8 @@ export const services = [
 		audience: 'company',
 		title: 'GEO (Generative Engine Optimization)',
 		navTitle: 'GEO',
-		image: 'services/geo-ai.webp',
-		imageAlt: 'A glowing technology-company display screen above a robotic demo on a show floor',
+		image: 'services/geo-generative-engine-optimization.webp',
+		imageAlt: 'The “Go Global at CES” stage screen at the 2026 Speed Award World Tech Summit',
 		short:
 			'Monitor, optimize, and grow your visibility across AI search and recommendation ecosystems.',
 		summary:
@@ -261,8 +261,8 @@ export const services = [
 		audience: 'company',
 		title: 'E-commerce Growth',
 		navTitle: 'E-commerce Growth',
-		image: 'services/ecommerce.webp',
-		imageAlt: 'A tiered in-store product display for a pet-treat brand launch',
+		image: 'services/ecommerce-growth.webp',
+		imageAlt: 'Shoppers browsing product tables at the Ellicor grand opening',
 		short:
 			'Commerce strategies that turn positioning, content, and creator-led distribution into scalable sales on Amazon and TikTok Shop.',
 		summary:
@@ -320,8 +320,8 @@ export const services = [
 		audience: 'company',
 		title: 'Events & Activations',
 		navTitle: 'Events & Activations',
-		image: 'services/events.webp',
-		imageAlt: 'Dog owners and their dogs gathered at an in-store brand activation',
+		image: 'services/events-activations.webp',
+		imageAlt: 'Guests gathered in a warm brick-walled room at an Attencity brand event',
 		short:
 			'Events that connect brands with media, creators, and local communities, turning offline moments into scalable exposure.',
 		summary:

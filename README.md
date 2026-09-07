@@ -112,6 +112,10 @@ It reads `docs/source/deck-media/` and `docs/source/onepager-media/`, and writes
 - **client logos** → white-on-transparent PNGs at 160 px tall, so the dark marquee reads
   consistently (it derives the mask from alpha, or from the plate colour for logos that ship on
   a solid background);
+- **home service cards** → `services/<service-slug>.webp`, 900×1125 portrait crops cut from the
+  full-resolution deck originals. Each entry in `CARDS` carries a `focus` point (x, y in 0–1)
+  that stays centred in the crop, so the subject survives the tight vertical framing — that is
+  how the CES card keeps the whole "Go Global at CES" screen in shot;
 - **Open Graph cards** → `og/<page>.jpg`, 1200×630, cropped from each page's hero with a scrim
   and the lockup;
 - **`src/lib/content/media-sizes.js`** → the width/height map, so `dims()` and `srcset()` can
@@ -137,12 +141,21 @@ so honestly in the form.
 
 Workflow: [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml).
 
-1. Push to GitHub, then **Settings → Pages → Source → GitHub Actions**.
-2. `static/CNAME` claims `attencity.com`. In **Settings → Pages**, set the custom domain and
-   enable **Enforce HTTPS**; point the apex A/AAAA records (and `www` CNAME) at GitHub Pages.
-3. With a custom domain, `actions/configure-pages` returns an empty base path, so the site
-   serves from `/`. Check the first deploy log — if it is deploying to a project subpath,
-   `BASE_PATH` will be `/Attencity` and canonicals will not match.
+Every push to `main` deploys. The site is currently live at the project-page URL,
+**https://mikejin01.github.io/attencity/**, so `actions/configure-pages` sets `BASE_PATH` to
+`/attencity` and SvelteKit emits relative URLs that work at that prefix.
+
+**`static/CNAME` is deliberately gitignored.** `attencity.com` still resolves to the old host,
+so committing the file would make GitHub redirect the working `github.io` URL to a domain it
+does not serve — taking the new site dark. To switch the domain over:
+
+1. Point the apex A records at `185.199.108.153`, `.109.153`, `.110.153`, `.111.153`, and
+   `www` CNAME at `mikejin01.github.io`.
+2. Remove the `/static/CNAME` line from `.gitignore`, then `git add static/CNAME` and push.
+3. **Settings → Pages** → set the custom domain and tick **Enforce HTTPS**.
+
+`BASE_PATH` then comes back empty and the site serves from `/`, which is what the canonical
+URLs and `og:image` tags (already absolute against `https://attencity.com`) assume.
 
 ### Hand-off checklist for the owner
 
