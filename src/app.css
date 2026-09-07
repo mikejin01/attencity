@@ -91,8 +91,16 @@ h1,h2,h3{font-family:var(--font-display);font-weight:var(--h-weight);line-height
 .modal-x:hover{background:var(--surface-2);color:var(--text)}
 .modal-x svg{width:18px;height:18px}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.field{display:flex;flex-direction:column;gap:6px}
+/* min-width:0 is load-bearing: a grid item defaults to min-width:auto, so a
+   column cannot shrink below its content's min-content width. A <select>'s is
+   set by its longest <option> ("An event (CES, pop-up, party)"), which blew the
+   two-column grid ~80px past the 540px modal. */
+/* justify-content:flex-end bottom-aligns the group, so when one label in a row
+   wraps to two lines ("How did you hear about us?") both controls still line
+   up instead of one sitting a row-height lower. */
+.field{display:flex;flex-direction:column;justify-content:flex-end;gap:6px;min-width:0}
 .field.full{grid-column:1 / -1}
+.field input,.field select,.field textarea{width:100%;min-width:0;max-width:100%}
 .field label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-soft);font-weight:600}
 .field input,.field select,.field textarea{
   padding:12px 14px;background:var(--bg-alt);border:1px solid var(--border-strong);

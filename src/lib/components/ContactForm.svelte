@@ -140,7 +140,7 @@
 					<span class="err"></span>
 				</div>
 
-				<div class="field" class:invalid={errors.jobTitle}>
+				<div class="field full" class:invalid={errors.jobTitle}>
 					<label for={id('job')}>Job title *</label>
 					<select id={id('job')} bind:value={jobTitle} required>
 						<option value="" disabled>Select…</option>
@@ -151,7 +151,7 @@
 					{/if}
 					<span class="err">{errors.jobTitle ?? ''}</span>
 				</div>
-				<div class="field" class:invalid={errors.heardFrom}>
+				<div class="field full" class:invalid={errors.heardFrom}>
 					<label for={id('heard')}>How did you hear about us? *</label>
 					<select id={id('heard')} bind:value={heardFrom} required>
 						<option value="" disabled>Select…</option>
