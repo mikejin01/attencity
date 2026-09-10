@@ -387,6 +387,12 @@ function ${P}_wprest_payload() {
         // Live edits, keyed by dot-path into the app's content tree. These
         // shadow the copy compiled into the bundle — see src/lib/wp/overrides.js.
         'content'  => (object) ${P}_content_overrides(),
+        // The post list travels with the page rather than being fetched after
+        // it. A fetch resolves late and pushes a new card into the grid, which
+        // is a visible layout shift for every visitor. Bodies are heavy, so
+        // only the post matching this URL carries one; the listings never need
+        // any body at all.
+        'posts'    => ${P}_posts_payload(${P}_current_page_slug()),
         'globals'  => array(
             'business_name'   => get_option('${P}_global_business_name', ''),
             'contact_email'   => get_option('${P}_global_contact_email', ''),
@@ -662,6 +668,226 @@ add_action('admin_post_${P}_mark_reviewed', function () {
     exit;
 });
 
+/* ---------------------------------------------------------- blog authoring */
+
+/**
+ * Insights and Case Studies the client writes in the dashboard.
+ *
+ * Both are registered publicly_queryable => false with rewrite => false, so
+ * neither ever owns a URL of its own. That is deliberate: the theme already
+ * routes every page of this site through one WordPress page per route, and a
+ * custom post type with its own rewrite base would add competing rules for
+ * /insights/... and shadow the pages that already resolve. Instead, publishing
+ * a post creates the matching page (see ${P}_sync_post_page), so a new post
+ * takes exactly the same proven path through WordPress as every other route.
+ */
+function ${P}_post_types() {
+    return array(
+        '${P}_insight'     => array('base' => 'insights',      'label' => 'Insights',     'single' => 'Insight'),
+        '${P}_case_study'  => array('base' => 'case-studies',  'label' => 'Case Studies', 'single' => 'Case Study'),
+    );
+}
+
+add_action('init', function () {
+    foreach (${P}_post_types() as $type => $meta) {
+        register_post_type($type, array(
+            'labels' => array(
+                'name'          => $meta['label'],
+                'singular_name' => $meta['single'],
+                'add_new_item'  => 'Add New ' . $meta['single'],
+                'edit_item'     => 'Edit ' . $meta['single'],
+            ),
+            'public'              => false,
+            'show_ui'             => true,
+            'show_in_menu'        => false,   // added to the menu by hand, below
+            'show_in_rest'        => true,    // the block editor
+            'publicly_queryable'  => false,
+            'rewrite'             => false,
+            'has_archive'         => false,
+            'supports'            => array('title', 'editor', 'excerpt', 'thumbnail', 'revisions'),
+            'capability_type'     => 'post',
+            'menu_icon'           => 'dashicons-edit',
+        ));
+    }
+});
+
+/* --- the small extra fields the templates use ---------------------------- */
+
+function ${P}_post_meta_fields() {
+    return array(
+        '_xo_date_label' => 'Date label (optional, e.g. "July 26, 2025")',
+        '_xo_location'   => 'Location (optional)',
+        '_xo_client'     => 'Client (case studies)',
+        '_xo_tags'       => 'Tags, comma separated',
+        '_xo_services'   => 'Related service slugs, comma separated',
+    );
+}
+
+add_action('add_meta_boxes', function () {
+    foreach (array_keys(${P}_post_types()) as $type) {
+        add_meta_box('${P}_post_details', 'Post details', '${P}_render_post_meta_box', $type, 'side', 'default');
+    }
+});
+
+function ${P}_render_post_meta_box($post) {
+    wp_nonce_field('${P}_save_post_meta', '${P}_post_meta_nonce');
+    echo '<p class="description" style="margin-top:0;">The headline, body, summary and header image come from the editor and the Featured image. These are the extras.</p>';
+    foreach (${P}_post_meta_fields() as $key => $label) {
+        $value = (string) get_post_meta($post->ID, $key, true);
+        printf(
+            '<p><label for="%1$s"><strong>%2$s</strong></label>'
+            . '<input type="text" id="%1$s" name="%1$s" value="%3$s" style="width:100%%;"></p>',
+            esc_attr($key), esc_html($label), esc_attr($value)
+        );
+    }
+}
+
+add_action('save_post', function ($post_id, $post) {
+    if (!isset(${P}_post_types()[$post->post_type])) return;
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
+    if (!current_user_can('edit_post', $post_id)) return;
+
+    if (isset($_POST['${P}_post_meta_nonce'])
+        && wp_verify_nonce($_POST['${P}_post_meta_nonce'], '${P}_save_post_meta')) {
+        foreach (array_keys(${P}_post_meta_fields()) as $key) {
+            if (!isset($_POST[$key])) continue;
+            update_post_meta($post_id, $key, sanitize_text_field($_POST[$key]));
+        }
+    }
+    ${P}_sync_post_page($post);
+}, 10, 2);
+
+/**
+ * Keep a WordPress page in step with a post, so /insights/<slug>/ resolves.
+ *
+ * Published post  -> a published child page under the listing page.
+ * Anything else   -> that page is moved to draft, so the URL stops resolving
+ *                    rather than serving a shell for content that is gone.
+ */
+function ${P}_sync_post_page($post) {
+    $types = ${P}_post_types();
+    if (!isset($types[$post->post_type])) return;
+    $base = $types[$post->post_type]['base'];
+    $slug = $post->post_name;
+    if (!$slug) return;
+
+    $parent = get_page_by_path($base);
+    $existing = get_page_by_path($base . '/' . $slug);
+    $wanted = ($post->post_status === 'publish') ? 'publish' : 'draft';
+
+    if ($existing) {
+        if ($existing->post_status !== $wanted || $existing->post_title !== $post->post_title) {
+            wp_update_post(array(
+                'ID'          => $existing->ID,
+                'post_status' => $wanted,
+                'post_title'  => $post->post_title,
+            ));
+        }
+    } elseif ($wanted === 'publish') {
+        wp_insert_post(array(
+            'post_type'   => 'page',
+            'post_status' => 'publish',
+            'post_title'  => $post->post_title,
+            'post_name'   => $slug,
+            'post_parent' => $parent ? $parent->ID : 0,
+            'meta_input'  => array('_xo_routes_post' => (int) $post->ID),
+        ));
+        flush_rewrite_rules();
+    }
+}
+
+// A trashed or deleted post must not leave a live URL behind.
+add_action('trashed_post', function ($post_id) {
+    $post = get_post($post_id);
+    if ($post) ${P}_sync_post_page($post);
+});
+add_action('untrashed_post', function ($post_id) {
+    $post = get_post($post_id);
+    if ($post) ${P}_sync_post_page($post);
+});
+
+/* --- what the app reads -------------------------------------------------- */
+
+function ${P}_post_payload($post, $with_body = true) {
+    $thumb = get_the_post_thumbnail_url($post->ID, 'full');
+    $tags = array_values(array_filter(array_map('trim',
+        explode(',', (string) get_post_meta($post->ID, '_xo_tags', true)))));
+    $services = array_values(array_filter(array_map('trim',
+        explode(',', (string) get_post_meta($post->ID, '_xo_services', true)))));
+
+    return array(
+        'slug'      => $post->post_name,
+        'title'     => get_the_title($post),
+        'date'      => get_the_date('Y-m-d', $post),
+        'dateLabel' => (string) get_post_meta($post->ID, '_xo_date_label', true) ?: get_the_date('F j, Y', $post),
+        'excerpt'   => wp_strip_all_tags(get_the_excerpt($post)),
+        'hero'      => $thumb ? $thumb : '',
+        'heroAlt'   => $thumb ? (string) get_post_meta(get_post_thumbnail_id($post->ID), '_wp_attachment_image_alt', true) : '',
+        'location'  => (string) get_post_meta($post->ID, '_xo_location', true),
+        'client'    => (string) get_post_meta($post->ID, '_xo_client', true),
+        'tags'      => $tags,
+        'services'  => $services,
+        // Rendered here rather than in the browser so shortcodes, blocks and
+        // embeds all behave exactly as WordPress intends. Omitted unless this
+        // is the post being viewed, to keep every other page's payload small.
+        'body'      => $with_body ? apply_filters('the_content', $post->post_content) : null,
+    );
+}
+
+/** The slug of the page being viewed, used to decide which body to inline. */
+function ${P}_current_page_slug() {
+    $obj = get_queried_object();
+    return ($obj && isset($obj->post_name)) ? (string) $obj->post_name : '';
+}
+
+/**
+ * Every published post, grouped by kind. Only the post whose slug matches
+ * $with_body carries its rendered content; the rest are listing metadata.
+ */
+function ${P}_posts_payload($with_body = '') {
+    $out = array();
+    foreach (${P}_post_types() as $type => $meta) {
+        $key = ($type === '${P}_insight') ? 'insights' : 'caseStudies';
+        $out[$key] = array();
+        $posts = get_posts(array(
+            'post_type'      => $type,
+            'post_status'    => 'publish',
+            'posts_per_page' => 200,
+            'orderby'        => 'date',
+            'order'          => 'DESC',
+        ));
+        foreach ($posts as $post) {
+            $out[$key][] = ${P}_post_payload($post, $post->post_name === $with_body);
+        }
+    }
+    return $out;
+}
+
+add_action('rest_api_init', function () {
+    register_rest_route(${phpQuote(NS)}, '/posts', array(
+        'methods'             => 'GET',
+        'permission_callback' => '__return_true',
+        // Kept as a fallback for the case the inline payload was stripped by an
+        // optimisation plugin, and for a post opened by client-side navigation.
+        'callback'            => function () {
+            $out = array();
+            foreach (${P}_post_types() as $type => $meta) {
+                $key = ($type === '${P}_insight') ? 'insights' : 'caseStudies';
+                $out[$key] = array();
+                $posts = get_posts(array(
+                    'post_type'      => $type,
+                    'post_status'    => 'publish',
+                    'posts_per_page' => 200,
+                    'orderby'        => 'date',
+                    'order'          => 'DESC',
+                ));
+                foreach ($posts as $post) $out[$key][] = ${P}_post_payload($post, true);
+            }
+            return $out;
+        },
+    ));
+});
+
 /* ------------------------------------------------------------ admin page */
 
 add_action('admin_menu', function () {
@@ -677,6 +903,13 @@ add_action('admin_menu', function () {
     }
     add_menu_page('Leads', $label, 'edit_posts',
         'edit.php?post_type=lead_submission', '', 'dashicons-email-alt', 4);
+
+    // Writing surfaces, right under Leads.
+    $pos = 5;
+    foreach (${P}_post_types() as $type => $meta) {
+        add_menu_page($meta['label'], $meta['label'], 'edit_posts',
+            'edit.php?post_type=' . $type, '', 'dashicons-edit', $pos++);
+    }
 });
 
 // POST -> Redirect -> GET, handled before any admin HTML is sent.

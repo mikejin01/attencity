@@ -4,7 +4,7 @@
 	import { home, companyServices, asset, dims, route } from '$lib/content/attencity.js';
 	import { serviceIcons } from '$lib/editorial/icons.js';
 	import { reveal } from '$lib/actions.js';
-	import { editable, editableImage } from '$lib/wp/actions.svelte.js';
+	import { editable, editableImage, editableLink } from '$lib/wp/actions.svelte.js';
 	const s = home.servicesCompany;
 </script>
 
@@ -33,7 +33,13 @@
 			{/each}
 		</div>
 		<div class="section-cta text-center">
-			<a class="btn btn-outline-light" href={route(s.ctaHref)}>{s.cta}</a>
+			<a
+				class="btn btn-outline-light"
+				href={route(s.ctaHref)}
+				use:editableLink={'home.servicesCompany.ctaHref'}
+			>
+				<span use:editable={'home.servicesCompany.cta'}>{s.cta}</span>
+			</a>
 		</div>
 	</div>
 </section>

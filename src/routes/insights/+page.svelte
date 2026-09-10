@@ -8,7 +8,10 @@
 	import { insights } from '$lib/content/posts.js';
 	import { breadcrumbs, itemListGraph } from '$lib/seo/jsonld.js';
 	import { openContact } from '$lib/contact.svelte.js';
+	import { wpPosts, mergePosts } from '$lib/wp/posts.svelte.js';
 
+	// Shipped posts plus anything written in WordPress, newest first.
+	const allPosts = $derived(mergePosts(insights, wpPosts.insights, 'insight'));
 	const trail = [{ name: 'Insights', path: '/insights/' }];
 </script>
 
@@ -17,13 +20,13 @@
 	path="/insights/"
 	description="Event recaps and media partnership news from Attencity: CES, Lincoln Center, the UN, NYU and the US–China corridor."
 	image="og/insights.jpg"
-	jsonLd={[breadcrumbs(trail), itemListGraph(insights, '/insights/')]}
+	jsonLd={[breadcrumbs(trail), itemListGraph(allPosts, '/insights/')]}
 />
 
 <PageHero title={p.title} eyebrow={p.hero.eyebrow} sub={p.hero.sub} image={p.hero.image} position="center 40%" />
 <Breadcrumbs {trail} />
 <div id="page-body">
-	<PostGrid posts={insights} sub={p.intro} />
+	<PostGrid posts={allPosts} sub={p.intro} />
 	<CtaBand
 		id="insights-cta"
 		title="Working on a cross-border launch?"

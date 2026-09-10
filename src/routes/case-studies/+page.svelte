@@ -8,7 +8,10 @@
 	import { caseStudies } from '$lib/content/posts.js';
 	import { breadcrumbs, itemListGraph } from '$lib/seo/jsonld.js';
 	import { openContact } from '$lib/contact.svelte.js';
+	import { wpPosts, mergePosts } from '$lib/wp/posts.svelte.js';
 
+	// Shipped posts plus anything written in WordPress, newest first.
+	const allPosts = $derived(mergePosts(caseStudies, wpPosts.caseStudies, 'case-study'));
 	const trail = [{ name: 'Case Studies', path: '/case-studies/' }];
 </script>
 
@@ -17,13 +20,13 @@
 	path="/case-studies/"
 	description="Pop-ups, launches, creator parties and cross-border PR programmes Attencity has run in New York and across the US — with the numbers attached."
 	image="og/case-studies.jpg"
-	jsonLd={[breadcrumbs(trail), itemListGraph(caseStudies, '/case-studies/')]}
+	jsonLd={[breadcrumbs(trail), itemListGraph(allPosts, '/case-studies/')]}
 />
 
 <PageHero title={p.title} eyebrow={p.hero.eyebrow} sub={p.hero.sub} image={p.hero.image} position="center 45%" />
 <Breadcrumbs {trail} />
 <div id="page-body">
-	<PostGrid posts={caseStudies} sub={p.intro} />
+	<PostGrid posts={allPosts} sub={p.intro} />
 	<CtaBand
 		id="work-cta"
 		title="Want a launch that produces proof?"

@@ -10,6 +10,7 @@
 	import { captureAttribution } from '$lib/lead.js';
 	import EditToolbar from '$lib/wp/EditToolbar.svelte';
 	import { wpEdit } from '$lib/wp/edit.svelte.js';
+	import { wpPosts } from '$lib/wp/posts.svelte.js';
 	import { onMount } from 'svelte';
 
 	let { children } = $props();
@@ -19,6 +20,9 @@
 	// Decides whether this visitor is a logged-in WordPress user. A no-op in the
 	// static build, where the toolbar can never appear.
 	onMount(() => wpEdit.init());
+	// Anything the client has written in the dashboard. Reads the list the theme
+	// printed into the page, so listings paint complete. A no-op in the static build.
+	wpPosts.init();
 	// Organization / ProfessionalService / WebSite — emitted once for the whole
 	// site; per-page types are added by <Seo jsonLd={…} />.
 	const orgGraph = JSON.stringify(organizationGraph()).replace(/</g, '\\u003c');

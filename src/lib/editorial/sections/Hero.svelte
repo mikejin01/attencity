@@ -6,7 +6,7 @@
 	import { onMount } from 'svelte';
 	import { home, asset, route, srcset, dims } from '$lib/content/attencity.js';
 	import { openContact } from '$lib/contact.svelte.js';
-	import { editable, editableImage } from '$lib/wp/actions.svelte.js';
+	import { editable, editableImage, editableLink } from '$lib/wp/actions.svelte.js';
 	const h = home.hero;
 	const slides = h.slides;
 
@@ -92,7 +92,11 @@
 						<button class="btn btn-primary" type="button" onclick={openContact}>
 							<span use:editable={'home.hero.primary'}>{h.primary}</span>
 						</button>
-						<a class="btn btn-outline-light" href={route(h.secondaryHref)}>
+						<a
+							class="btn btn-outline-light"
+							href={route(h.secondaryHref)}
+							use:editableLink={'home.hero.secondaryHref'}
+						>
 							<span use:editable={'home.hero.secondary'}>{h.secondary}</span>
 						</a>
 					</div>

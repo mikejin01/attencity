@@ -13,6 +13,9 @@ export function entries() {
 }
 
 export function load({ params }) {
-	if (!caseStudyBySlug[params.slug]) error(404, `Unknown case study: ${params.slug}`);
+	// In the WordPress build the slug may belong to a post written in the
+	// dashboard, which only the browser can resolve. Let it through and let
+	// the page render its own not-found state if nothing turns up.
+	if (!__WP_BUILD__ && !caseStudyBySlug[params.slug]) error(404, `Unknown case study: ${params.slug}`);
 	return { slug: params.slug };
 }

@@ -33,8 +33,16 @@ export const asset = (file) => {
 	if (typeof v === 'string' && (/^(https?:)?\/\//.test(v) || v.startsWith('/'))) return v;
 	return `${assetRoot()}/assets/attencity/${v}`;
 };
-/** Base-aware internal route. Routes always end with a slash (trailingSlash = 'always'). */
-export const route = (path) => `${base}${path}`;
+/**
+ * Base-aware internal route. Routes always end with a slash (trailingSlash = 'always').
+ * A destination retargeted in the WordPress editor may point off-site, so any
+ * absolute URL or scheme is passed through untouched rather than having the
+ * base path glued to the front of it.
+ */
+export const route = (path) => {
+	if (typeof path === 'string' && /^([a-z][a-z0-9+.-]*:|\/\/)/i.test(path)) return path;
+	return `${base}${path}`;
+};
 /** `[width, height]` for any WebP under static/assets/attencity/, or null. */
 export const dims = (file) => {
 	const m = mediaSizes[file];
