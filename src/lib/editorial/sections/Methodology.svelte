@@ -5,6 +5,7 @@
 <script>
 	import { aboutPage } from '$lib/content/attencity.js';
 	import { reveal } from '$lib/actions.js';
+	import { editable } from '$lib/wp/actions.svelte.js';
 	const m = aboutPage.methodology;
 	/** Node centres on the 141.4px ring, clockwise from top-left. */
 	const nodes = [
@@ -26,7 +27,7 @@
 	<div class="container container--lg">
 		<div class="content-blocks text-center" use:reveal>
 			<div class="content-blocks__block"><span class="section-eyebrow">{m.eyebrow}</span></div>
-			<div class="content-blocks__block"><h2 class="section-title">{m.title}</h2></div>
+			<div class="content-blocks__block"><h2 class="section-title" use:editable={'aboutPage.methodology.title'}>{m.title}</h2></div>
 		</div>
 
 		<div class="method">
@@ -58,7 +59,7 @@
 			</figure>
 
 			<div class="method__body" use:reveal>
-				<p class="split__lead">{m.lead}</p>
+				<p class="split__lead" data-xo-multiline="true" use:editable={'aboutPage.methodology.lead'}>{m.lead}</p>
 				<dl class="method__three-a">
 					{#each m.threeA as a (a.key)}
 						<div class="method__a">

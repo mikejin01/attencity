@@ -8,12 +8,17 @@
 	import { organizationGraph } from '$lib/seo/jsonld.js';
 	import { contactConfig } from '$lib/content/attencity.js';
 	import { captureAttribution } from '$lib/lead.js';
+	import EditToolbar from '$lib/wp/EditToolbar.svelte';
+	import { wpEdit } from '$lib/wp/edit.svelte.js';
 	import { onMount } from 'svelte';
 
 	let { children } = $props();
 	// UTM / referrer / landing page, stored once per session so a lead keeps
 	// its attribution even when it is submitted several pages later.
 	onMount(captureAttribution);
+	// Decides whether this visitor is a logged-in WordPress user. A no-op in the
+	// static build, where the toolbar can never appear.
+	onMount(() => wpEdit.init());
 	// Organization / ProfessionalService / WebSite — emitted once for the whole
 	// site; per-page types are added by <Seo jsonLd={…} />.
 	const orgGraph = JSON.stringify(organizationGraph()).replace(/</g, '\\u003c');
@@ -38,3 +43,6 @@
 	<!-- "Get in touch" modal is global so any CTA on any page can open it. -->
 	<ContactModal />
 </div>
+
+<!-- Editing chrome for logged-in WordPress users; renders nothing otherwise. -->
+<EditToolbar />

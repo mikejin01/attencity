@@ -4,6 +4,7 @@
 	import { asset, srcset, dims, route } from '$lib/content/attencity.js';
 	import { postHref, formatDate } from '$lib/content/posts.js';
 	import { reveal } from '$lib/actions.js';
+	import { editableImage } from '$lib/wp/actions.svelte.js';
 
 	/** @type {{ posts: any[], eyebrow?: string, title?: string, sub?: string,
 	 *  cta?: {label: string, href: string}, band?: 'white'|'alt'|'dark', id?: string,
@@ -40,7 +41,7 @@
 					<a class="post-card__link" href={route(postHref(p))}>
 						<span class="post-card__media">
 							<img
-								src={asset(p.hero)}
+								src={asset(p.hero)} use:editableImage={p.hero}
 								srcset={srcset(p.hero) || undefined}
 								sizes="(min-width: 992px) 33vw, 100vw"
 								width={dims(p.hero)?.width}

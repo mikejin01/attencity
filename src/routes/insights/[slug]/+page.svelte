@@ -8,6 +8,7 @@
 	import { insightBySlug, formatDate } from '$lib/content/posts.js';
 	import { insightsPage, asset, dims } from '$lib/content/attencity.js';
 	import { breadcrumbs, postGraph } from '$lib/seo/jsonld.js';
+	import { editableImage } from '$lib/wp/actions.svelte.js';
 
 	const bodies = import.meta.glob('/src/content/insights/*.md', { eager: true });
 	const bodyOf = (slug) => bodies[`/src/content/insights/${slug}.md`]?.default;
@@ -53,7 +54,7 @@
 				<Body />
 			</article>
 			<div class="author-box">
-				<img class="author-box__photo" src={asset(author.image)} alt="" width={dims(author.image)?.width} height={dims(author.image)?.height} loading="lazy" decoding="async" />
+				<img class="author-box__photo" src={asset(author.image)} use:editableImage={author.image} alt="" width={dims(author.image)?.width} height={dims(author.image)?.height} loading="lazy" decoding="async" />
 				<div>
 					<span class="author-box__name">{author.name}</span>
 					<span class="author-box__role">{author.role}</span>

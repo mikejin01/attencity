@@ -2,6 +2,7 @@
 <script>
 	import { aboutPage, asset } from '$lib/content/attencity.js';
 	import { reveal } from '$lib/actions.js';
+	import { editableImage } from '$lib/wp/actions.svelte.js';
 	const t = aboutPage.team;
 </script>
 
@@ -14,7 +15,7 @@
 		<ul class="team-grid">
 			{#each t.members as m (m.name)}
 				<li class="team-card" use:reveal>
-					<img class="team-card__photo" src={asset(m.image)} alt={m.name} loading="lazy" decoding="async" width="500" height="500" />
+					<img class="team-card__photo" src={asset(m.image)} use:editableImage={m.image} alt={m.name} loading="lazy" decoding="async" width="500" height="500" />
 					<h3 class="team-card__name">{m.name}</h3>
 					<p class="team-card__role">{m.role}</p>
 				</li>

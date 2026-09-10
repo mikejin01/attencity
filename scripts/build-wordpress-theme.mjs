@@ -384,6 +384,9 @@ function ${P}_wprest_payload() {
         'postId'   => (int) get_queried_object_id(),
         'themeUri' => esc_url_raw(get_template_directory_uri()),
         'isLoggedIn' => current_user_can('edit_posts'),
+        // Live edits, keyed by dot-path into the app's content tree. These
+        // shadow the copy compiled into the bundle — see src/lib/wp/overrides.js.
+        'content'  => (object) ${P}_content_overrides(),
         'globals'  => array(
             'business_name'   => get_option('${P}_global_business_name', ''),
             'contact_email'   => get_option('${P}_global_contact_email', ''),
@@ -440,6 +443,89 @@ add_filter('document_title_parts', function ($parts) {
         $parts['tagline'] = get_bloginfo('description');
     }
     return $parts;
+});
+
+/* --------------------------------------------------------- inline editing */
+
+/** The saved map of dot-path => value. Always an array. */
+function ${P}_content_overrides() {
+    $saved = get_option('${P}_content_overrides', array());
+    return is_array($saved) ? $saved : array();
+}
+
+/**
+ * A content key is a dot-path into the app's content tree, such as
+ * "home.hero.title", or "img.events/foo.webp" for a replaced image. Anything
+ * else is refused rather than stored, so a malformed key never becomes a row.
+ */
+function ${P}_valid_content_key($key) {
+    return is_string($key)
+        && $key !== ''
+        && strlen($key) <= 200
+        && (bool) preg_match('/^[A-Za-z0-9_]+(\.[A-Za-z0-9_-]+)*$/', $key);
+}
+
+/**
+ * Values are either copy or an image URL. A URL must go through the URL
+ * sanitiser, because the text one would mangle it, and the protocol allowlist
+ * is what keeps a javascript: URL out of an <img src> or an href.
+ */
+function ${P}_sanitize_content_value($value) {
+    if (!is_string($value)) return '';
+    $trimmed = trim($value);
+    if (preg_match('#^(https?://|/wp-content/|//)#i', $trimmed)) {
+        return esc_url_raw($trimmed, array('http', 'https'));
+    }
+    return sanitize_textarea_field($trimmed);
+}
+
+add_action('rest_api_init', function () {
+    register_rest_route(${phpQuote(NS)}, '/save-page-data', array(
+        'methods'             => 'POST',
+        'callback'            => '${P}_save_page_data',
+        // Same bar WordPress uses for editing a post. The nonce is checked by
+        // the REST layer itself via the X-WP-Nonce header.
+        'permission_callback' => function () { return current_user_can('edit_posts'); },
+    ));
+});
+
+function ${P}_save_page_data($request) {
+    $body = $request->get_json_params();
+    $incoming = is_array($body) && isset($body['content']) && is_array($body['content'])
+        ? $body['content']
+        : array();
+
+    $saved   = ${P}_content_overrides();
+    $written = 0;
+    $refused = array();
+
+    foreach ($incoming as $key => $value) {
+        if (!${P}_valid_content_key($key)) { $refused[] = (string) $key; continue; }
+        $clean = ${P}_sanitize_content_value($value);
+        if ($clean === '' && !is_string($value)) { $refused[] = (string) $key; continue; }
+        $saved[$key] = $clean;
+        $written++;
+    }
+
+    update_option('${P}_content_overrides', $saved, false);
+
+    // Without this the visitor keeps being served the pre-edit HTML for hours.
+    if (function_exists('sg_cachepress_purge_cache')) sg_cachepress_purge_cache();
+    if (function_exists('wp_cache_flush')) wp_cache_flush();
+
+    return new WP_REST_Response(array(
+        'success' => true,
+        'written' => $written,
+        'refused' => $refused,
+    ), 200);
+}
+
+/**
+ * The Media Library picker the image overlay opens. Only loaded for users who
+ * could edit anyway, so a visitor never pays for it.
+ */
+add_action('wp_enqueue_scripts', function () {
+    if (current_user_can('edit_posts')) wp_enqueue_media();
 });
 
 /* ----------------------------------------------------------------- leads */
@@ -614,11 +700,20 @@ add_action('admin_init', function () {
         wp_redirect(add_query_arg('${P}_repaired', '1', admin_url('admin.php?page=${P}-admin')));
         exit;
     }
+
+    if (isset($_POST['${P}_reset_content'])) {
+        check_admin_referer('${P}_reset_content');
+        delete_option('${P}_content_overrides');
+        if (function_exists('sg_cachepress_purge_cache')) sg_cachepress_purge_cache();
+        wp_redirect(add_query_arg('${P}_reset', '1', admin_url('admin.php?page=${P}-admin')));
+        exit;
+    }
 });
 
 function ${P}_render_admin_page() {
     if (isset($_GET['${P}_saved']))    echo '<div class="updated notice is-dismissible"><p>Saved.</p></div>';
     if (isset($_GET['${P}_repaired'])) echo '<div class="updated notice is-dismissible"><p>Pages checked.</p></div>';
+    if (isset($_GET['${P}_reset']))    echo '<div class="updated notice is-dismissible"><p>Live edits cleared.</p></div>';
 
     $email = get_option('${P}_global_contact_email', '');
     if (!$email || !is_email($email)) {
@@ -674,6 +769,23 @@ function ${P}_render_admin_page() {
                            Safe to run more than once.</p>
                         <?php submit_button('Check &amp; create missing pages', 'secondary', 'submit', false); ?>
                     </form>
+                    <hr>
+                    <form method="post" onsubmit="return confirm('Clear every text and image edit made on the site and go back to the copy shipped with the theme?');">
+                        <?php wp_nonce_field('${P}_reset_content'); ?>
+                        <input type="hidden" name="${P}_reset_content" value="1">
+                        <p class="description">
+                            <?php $n = count(${P}_content_overrides()); ?>
+                            <?php echo (int) $n; ?> live edit<?php echo $n === 1 ? '' : 's'; ?> currently override the theme's copy.
+                            Business details above are kept.
+                        </p>
+                        <?php submit_button('Reset page content', 'delete', 'submit', false); ?>
+                    </form>
+                </div>
+                <div style="background:#fff;padding:24px;border-radius:12px;border:1px solid #e2e8f0;">
+                    <h2 style="margin-top:0;">Editing the page itself</h2>
+                    <p class="description">Open <a href="<?php echo esc_url(home_url('/')); ?>">the site</a> while
+                       logged in and use the <strong>Edit page</strong> button in the bottom-right corner. Text and
+                       images become editable in place; <strong>Save changes</strong> publishes them.</p>
                 </div>
                 <div style="background:#fff;padding:24px;border-radius:12px;border:1px solid #e2e8f0;">
                     <h2 style="margin-top:0;">Routes served by this theme</h2>

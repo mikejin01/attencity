@@ -4,6 +4,7 @@
 <script>
 	import { asset, srcset, dims, route } from '$lib/content/attencity.js';
 	import { reveal } from '$lib/actions.js';
+	import { editableImage } from '$lib/wp/actions.svelte.js';
 	/** @type {{ id?: string, eyebrow?: string, title: string, lead?: string, image: string, alt?: string,
 	 *  cta?: {label: string, href: string}, band?: 'white'|'alt', mediaLeft?: boolean, children?: import('svelte').Snippet }} */
 	let { id, eyebrow = '', title, lead = '', image, alt = '', cta, band = 'alt', mediaLeft = false, children } = $props();
@@ -25,7 +26,7 @@
 			</div>
 			<figure class="split__media" use:reveal>
 				<img
-					src={asset(image)}
+					src={asset(image)} use:editableImage={image}
 					srcset={srcset(image) || undefined}
 					sizes="(min-width: 900px) 45vw, 100vw"
 					width={dims(image)?.width}

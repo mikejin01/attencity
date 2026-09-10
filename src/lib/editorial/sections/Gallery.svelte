@@ -3,6 +3,7 @@
 <script>
 	import { asset, srcset, dims } from '$lib/content/attencity.js';
 	import { reveal } from '$lib/actions.js';
+	import { editableImage } from '$lib/wp/actions.svelte.js';
 	let { images = [], title = '', band = 'white', id } = $props();
 </script>
 
@@ -14,7 +15,7 @@
 				{#each images as img (img.file)}
 					<li class="gallery__item" use:reveal>
 						<img
-							src={asset(img.file)}
+							src={asset(img.file)} use:editableImage={img.file}
 							srcset={srcset(img.file) || undefined}
 							sizes="(min-width: 992px) 33vw, 100vw"
 							width={dims(img.file)?.width}

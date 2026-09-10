@@ -6,6 +6,7 @@
 	import { onMount } from 'svelte';
 	import { home, asset, route, srcset, dims } from '$lib/content/attencity.js';
 	import { openContact } from '$lib/contact.svelte.js';
+	import { editable, editableImage } from '$lib/wp/actions.svelte.js';
 	const h = home.hero;
 	const slides = h.slides;
 
@@ -62,6 +63,7 @@
 					class="hero-img hero-slide"
 					class:is-active={i === active}
 					src={i <= maxLoaded ? asset(s.image) : null}
+					use:editableImage={s.image}
 					srcset={i <= maxLoaded && srcset(s.image) ? srcset(s.image) : null}
 					sizes="100vw"
 					width={dims(s.image)?.width}
@@ -76,17 +78,23 @@
 		</div>
 		<div class="container container--md">
 			<div class="content-blocks text-center hero-content">
-				<div class="content-blocks__block"><h1 class="h1">{h.title}</h1></div>
+				<div class="content-blocks__block">
+					<h1 class="h1" use:editable={'home.hero.title'}>{h.title}</h1>
+				</div>
 				<div class="content-blocks__block">
 					<p class="hero-sub">
-						<strong class="hero-sub__lead">{h.lead}</strong>
-						<span class="hero-sub__text">{h.text}</span>
+						<strong class="hero-sub__lead" use:editable={'home.hero.lead'}>{h.lead}</strong>
+						<span class="hero-sub__text" data-xo-multiline="true" use:editable={'home.hero.text'}>{h.text}</span>
 					</p>
 				</div>
 				<div class="content-blocks__block">
 					<div class="content-block__links hero-links">
-						<button class="btn btn-primary" type="button" onclick={openContact}>{h.primary}</button>
-						<a class="btn btn-outline-light" href={route(h.secondaryHref)}>{h.secondary}</a>
+						<button class="btn btn-primary" type="button" onclick={openContact}>
+							<span use:editable={'home.hero.primary'}>{h.primary}</span>
+						</button>
+						<a class="btn btn-outline-light" href={route(h.secondaryHref)}>
+							<span use:editable={'home.hero.secondary'}>{h.secondary}</span>
+						</a>
 					</div>
 				</div>
 			</div>

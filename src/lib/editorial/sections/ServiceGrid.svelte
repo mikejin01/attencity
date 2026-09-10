@@ -4,6 +4,7 @@
 	import { home, companyServices, asset, dims, route } from '$lib/content/attencity.js';
 	import { serviceIcons } from '$lib/editorial/icons.js';
 	import { reveal } from '$lib/actions.js';
+	import { editable, editableImage } from '$lib/wp/actions.svelte.js';
 	const s = home.servicesCompany;
 </script>
 
@@ -11,12 +12,12 @@
 	<div class="container container--lg">
 		<div class="content-blocks text-center" use:reveal>
 			<div class="content-blocks__block"><span class="section-eyebrow">{s.eyebrow}</span></div>
-			<div class="content-blocks__block"><h2 class="section-title section-title--statement">{s.title}</h2></div>
+			<div class="content-blocks__block"><h2 class="section-title section-title--statement" use:editable={'home.servicesCompany.title'}>{s.title}</h2></div>
 		</div>
 		<div class="svc-grid svc-grid--services">
 			{#each companyServices as svc (svc.slug)}
 				<a class="svc-card svc-card--service" href={route(`/services/${svc.slug}/`)} use:reveal>
-					<img class="svc-bg" src={asset(svc.image)} alt={svc.imageAlt} loading="lazy" decoding="async" width={dims(svc.image)?.width} height={dims(svc.image)?.height} />
+					<img class="svc-bg" src={asset(svc.image)} use:editableImage={svc.image} alt={svc.imageAlt} loading="lazy" decoding="async" width={dims(svc.image)?.width} height={dims(svc.image)?.height} />
 					<div class="svc-overlay"></div>
 					<div class="svc-content">
 						<span class="svc-icon" aria-hidden="true">

@@ -6,6 +6,7 @@
 	import { socialIcons } from '$lib/editorial/icons.js';
 	import ContactForm from '$lib/components/ContactForm.svelte';
 	import { reveal } from '$lib/actions.js';
+	import { editable, editableImage } from '$lib/wp/actions.svelte.js';
 
 	const c = site.contact;
 	const info = contactPage.info;
@@ -105,7 +106,7 @@
 			</div>
 
 			<div class="form-card" use:reveal>
-				<h2 class="form-card__title">{contactPage.form.title}</h2>
+				<h2 class="form-card__title" use:editable={'contactPage.form.title'}>{contactPage.form.title}</h2>
 				<ContactForm variant="light" idPrefix="contact" formLocation="contact" submitLabel="Send message" />
 			</div>
 		</div>
@@ -125,7 +126,7 @@
 				<p class="modal-sub">{qrOpen.handle}{qrOpen.note ? ` · ${qrOpen.note}` : ''}</p>
 				<img
 					class="qr-image"
-					src={asset(qrOpen.qr)}
+					src={asset(qrOpen.qr)} use:editableImage={qrOpen.qr}
 					width={dims(qrOpen.qr)?.width}
 					height={dims(qrOpen.qr)?.height}
 					alt={qrOpen.qrAlt ?? `${qrOpen.name} QR code`}

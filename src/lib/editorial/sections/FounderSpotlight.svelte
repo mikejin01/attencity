@@ -3,6 +3,7 @@
 <script>
 	import { aboutPage, asset, dims } from '$lib/content/attencity.js';
 	import { reveal } from '$lib/actions.js';
+	import { editableImage } from '$lib/wp/actions.svelte.js';
 	const f = aboutPage.founder;
 </script>
 
@@ -27,7 +28,7 @@
 				</dl>
 			</div>
 			<figure class="split__media founder__media" use:reveal>
-				<img src={asset(f.image)} alt={f.alt} loading="lazy" decoding="async" width={dims(f.image)?.width} height={dims(f.image)?.height} />
+				<img src={asset(f.image)} use:editableImage={f.image} alt={f.alt} loading="lazy" decoding="async" width={dims(f.image)?.width} height={dims(f.image)?.height} />
 			</figure>
 		</div>
 	</div>

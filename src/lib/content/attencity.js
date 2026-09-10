@@ -11,6 +11,7 @@
 // =====================================================================
 import { base } from '$app/paths';
 import { assetRoot } from '$lib/wp/runtime.js';
+import { applyOverrides, overrideOr } from '$lib/wp/overrides.js';
 import { mediaSizes } from './media-sizes.js';
 
 export { services, companyServices, serviceBySlug } from './services.js';
@@ -21,7 +22,17 @@ export { clientLogos, clientCategories, networkGroups, placements } from './netw
  * `assetRoot()` is `base` in the static build and the WordPress theme
  * directory in the WP_BUILD shell — see src/lib/wp/runtime.js.
  */
-export const asset = (file) => `${assetRoot()}/assets/attencity/${file}`;
+export const asset = (file) => {
+	// Images are keyed by their own path (`img.events/foo.webp`) rather than by
+	// where they sit in the content tree. Every image in the app already flows
+	// through here, including those from markdown posts and services.js, so one
+	// lookup makes all of them replaceable with no per-component plumbing.
+	const v = overrideOr(`img.${file}`, file);
+	// A replacement picked from the Media Library is already a full URL;
+	// prefixing it with the theme directory would break it.
+	if (typeof v === 'string' && (/^(https?:)?\/\//.test(v) || v.startsWith('/'))) return v;
+	return `${assetRoot()}/assets/attencity/${v}`;
+};
 /** Base-aware internal route. Routes always end with a slash (trailingSlash = 'always'). */
 export const route = (path) => `${base}${path}`;
 /** `[width, height]` for any WebP under static/assets/attencity/, or null. */
@@ -505,3 +516,25 @@ export const footer = {
 	],
 	copyright: `© 2026 ${site.legalName}. All rights reserved.`
 };
+
+// ---------------------------------------------------------------------
+// Live edits made on the WordPress site shadow everything above. This runs
+// once, at module load, and mutates the objects in place so every component
+// that already imported them sees the edited copy. A no-op outside the
+// WordPress build. Keys are dot-paths: `home.hero.title`.
+// ---------------------------------------------------------------------
+applyOverrides({
+	site,
+	stats,
+	nav,
+	whyPoints,
+	home,
+	contactModal,
+	servicesPage,
+	servicePageChrome,
+	aboutPage,
+	contactPage,
+	caseStudiesPage,
+	insightsPage,
+	footer
+});

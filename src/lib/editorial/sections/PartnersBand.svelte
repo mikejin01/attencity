@@ -5,6 +5,7 @@
 	import { home, site, placements, route } from '$lib/content/attencity.js';
 	import { caseStudyBySlug, insightBySlug } from '$lib/content/posts.js';
 	import { reveal } from '$lib/actions.js';
+	import { editable } from '$lib/wp/actions.svelte.js';
 
 	const p = home.partners;
 	const evidenced = placements.filter((x) =>
@@ -20,8 +21,8 @@
 			<div class="partners__body">
 				<span class="section-eyebrow">{p.eyebrow}</span>
 				<h2 class="section-title">{p.title}</h2>
-				<h3 class="partners__name">{site.partnership.title}</h3>
-				<p class="partners__copy">{site.partnership.body}</p>
+				<h3 class="partners__name" use:editable={'site.partnership.title'}>{site.partnership.title}</h3>
+				<p class="partners__copy" data-xo-multiline="true" use:editable={'site.partnership.body'}>{site.partnership.body}</p>
 			</div>
 			{#if evidenced.length}
 				<div class="partners__placements">

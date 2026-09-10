@@ -3,6 +3,7 @@
 	import { home, whyPoints, asset, srcset, dims } from '$lib/content/attencity.js';
 	import { lineIcons } from '$lib/editorial/icons.js';
 	import { reveal } from '$lib/actions.js';
+	import { editable, editableImage } from '$lib/wp/actions.svelte.js';
 	const w = home.why;
 </script>
 
@@ -10,12 +11,12 @@
 	<div class="container container--lg">
 		<div class="why-grid">
 			<figure class="why-media" use:reveal>
-				<img src={asset(w.image)} srcset={srcset(w.image) || undefined} sizes="(min-width: 992px) 38vw, 100vw" alt={w.alt} loading="lazy" decoding="async" width={dims(w.image)?.width} height={dims(w.image)?.height} />
+				<img src={asset(w.image)} use:editableImage={w.image} srcset={srcset(w.image) || undefined} sizes="(min-width: 992px) 38vw, 100vw" alt={w.alt} loading="lazy" decoding="async" width={dims(w.image)?.width} height={dims(w.image)?.height} />
 			</figure>
 			<div class="why-body">
 				<span class="title-rule"></span>
-				<h2 class="section-title">{w.title}</h2>
-				<p class="why-lead">{w.lead}</p>
+				<h2 class="section-title" use:editable={'home.why.title'}>{w.title}</h2>
+				<p class="why-lead" data-xo-multiline="true" use:editable={'home.why.lead'}>{w.lead}</p>
 				<ul class="why-list">
 					{#each whyPoints as p (p.title)}
 						<li class="why-item" use:reveal>

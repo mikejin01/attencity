@@ -3,6 +3,7 @@
 <script>
 	import { home, clientLogos, asset, dims } from '$lib/content/attencity.js';
 	import { reveal } from '$lib/actions.js';
+	import { editableImage } from '$lib/wp/actions.svelte.js';
 	const c = home.clients;
 </script>
 
@@ -14,7 +15,7 @@
 		</div>
 		<ul class="client-grid" use:reveal>
 			{#each clientLogos as l (l.file)}
-				<li class="client-logo"><img src={asset(l.file)} width={dims(l.file)?.width} height={dims(l.file)?.height} alt={l.name} loading="lazy" decoding="async" /></li>
+				<li class="client-logo"><img src={asset(l.file)} use:editableImage={l.file} width={dims(l.file)?.width} height={dims(l.file)?.height} alt={l.name} loading="lazy" decoding="async" /></li>
 			{/each}
 		</ul>
 	</div>
