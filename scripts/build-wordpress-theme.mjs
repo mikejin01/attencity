@@ -129,6 +129,7 @@ fs.rmSync(path.join(THEME_DIR, '.DS_Store'), { force: true });
 // would compete with it in Search Console.
 fs.rmSync(path.join(THEME_DIR, 'sitemap.xml'), { force: true });
 fs.rmSync(path.join(THEME_DIR, 'CNAME'), { force: true });
+fs.rmSync(path.join(THEME_DIR, '.nojekyll'), { force: true });
 
 /* ------------------------------ 4. split the fallback page into templates */
 
@@ -248,15 +249,28 @@ write('functions.php', functionsPhp());
 
 log('🗜  Zipping the theme…');
 const zipName = `${THEME.slug}.zip`;
-fs.rmSync(path.join(ROOT, zipName), { force: true });
+const zipTarget = path.join(ROOT, zipName);
+fs.rmSync(zipTarget, { force: true });
+// WordPress's installer accepts an archive whose files sit at the root, but it
+// then names the theme folder after the zip FILE, so renaming the download
+// silently renames the theme and breaks the path the Makefile pushes to. Wrap
+// the tree in a correctly-named folder, which is what every installer expects.
+const stage = path.join(ROOT, '.theme-zip-stage');
 try {
-	execSync(`cd "${THEME_DIR}" && zip -qr "../${zipName}" . -x "*.DS_Store"`, {
+	fs.rmSync(stage, { recursive: true, force: true });
+	fs.mkdirSync(stage, { recursive: true });
+	fs.cpSync(THEME_DIR, path.join(stage, THEME.slug), { recursive: true });
+	// A GitHub Pages marker has no business inside a WordPress theme.
+	fs.rmSync(path.join(stage, THEME.slug, '.nojekyll'), { force: true });
+	execSync(`cd "${stage}" && zip -qr "${zipTarget}" "${THEME.slug}" -x "*.DS_Store"`, {
 		cwd: ROOT,
 		stdio: 'inherit',
 		shell: '/bin/bash'
 	});
 } catch {
 	log('   ⚠️  zip unavailable — skipping the archive (rsync deploy is unaffected)');
+} finally {
+	fs.rmSync(stage, { recursive: true, force: true });
 }
 
 const zipPath = path.join(ROOT, zipName);
