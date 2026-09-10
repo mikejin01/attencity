@@ -21,3 +21,12 @@ vite.config.ts.timestamp-*
 # redirect the github.io URL to a domain the old host still serves, so the new
 # build goes dark. Remove this line and commit the file once DNS is switched.
 /static/CNAME
+
+# Generated WordPress theme, live-content snapshots, and per-site SSH
+# credentials. Only the committed _template.mk documents the shape.
+/wordpress-theme
+/attencity.zip
+/siteground
+/.content-sync
+.live-sites/*.mk
+!.live-sites/_template.mk

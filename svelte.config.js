@@ -15,6 +15,7 @@ import { mdsvex } from 'mdsvex';
  * Nothing in src/routes/ is markdown, so no `.md` file becomes a route.
  */
 const dev = process.argv.includes('dev');
+const WP_BUILD = process.env.WP_BUILD === '1';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
@@ -24,12 +25,17 @@ const config = {
 		adapter: adapter({
 			pages: 'build',
 			assets: 'build',
-			fallback: '404.html',
+			// SPA mode needs the fallback AT index.html (nothing is prerendered);
+			// the static build prerenders every route and uses 404.html for strays.
+			fallback: WP_BUILD ? 'index.html' : '404.html',
 			precompress: false,
-			strict: true
+			strict: !WP_BUILD
 		}),
 		paths: {
-			base: dev ? '' : process.env.BASE_PATH || ''
+			// WP_BUILD keeps base empty on purpose: routes must resolve at the site
+			// root, while ASSET urls get the theme directory prefix at runtime via
+			// src/lib/wp/runtime.js. One base cannot serve both.
+			base: dev || WP_BUILD ? '' : process.env.BASE_PATH || ''
 		}
 	}
 };

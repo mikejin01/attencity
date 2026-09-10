@@ -1,9 +1,12 @@
+/* global __WP_BUILD__ */
 // One prerendered page per published case study. The body component is
 // globbed inside +page.svelte, so only the slug travels in the payload.
 import { error } from '@sveltejs/kit';
 import { caseStudies, caseStudyBySlug } from '$lib/content/posts.js';
 
-export const prerender = true;
+// Prerendered for the static build; in the WordPress shell nothing is
+// prerendered — WordPress serves the page and the SPA renders it.
+export const prerender = !__WP_BUILD__;
 
 export function entries() {
 	return caseStudies.map((p) => ({ slug: p.slug }));

@@ -8,7 +8,8 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:wordpress": "node scripts/build-wordpress-theme.mjs"
   },
   "devDependencies": {
     "@sveltejs/adapter-static": "^3.0.6",

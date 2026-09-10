@@ -3,10 +3,19 @@
 // contact page, every service CTA, and the modal.
 //
 // Delivery order (plan §6.3):
-//   endpoint → the Cloudflare Worker relay (email + Flodesk upsert)
+//   endpoint → WordPress's own /attencity/v1/lead when the theme provides it,
+//              otherwise the Cloudflare Worker relay (email + Flodesk upsert)
 //   mailto   → pre-filled mail client, so a message is never silently lost
 //   none     → the form says plainly that it is not connected yet
 import { contactConfig } from '$lib/content/attencity.js';
+import { leadEndpoint } from '$lib/wp/runtime.js';
+
+/**
+ * WordPress wins when the theme supplies an endpoint: the lead then lands in
+ * the dashboard AND is emailed on, with no third-party relay in the path.
+ * Empty outside the WP build, so the static site keeps its existing behaviour.
+ */
+const endpoint = leadEndpoint() || contactConfig.formEndpoint;
 
 export const contactModal = $state({ open: false });
 
@@ -19,7 +28,7 @@ export function closeContact() {
 }
 
 /** 'endpoint' | 'mailto' | 'none' — derived from contactConfig. */
-export const deliveryMode = contactConfig.formEndpoint
+export const deliveryMode = endpoint
 	? 'endpoint'
 	: contactConfig.email
 		? 'mailto'
@@ -45,7 +54,7 @@ const mailtoBody = (d) =>
  */
 export async function sendMessage(data) {
 	if (deliveryMode === 'endpoint') {
-		const res = await fetch(contactConfig.formEndpoint, {
+		const res = await fetch(endpoint, {
 			method: 'POST',
 			headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
 			body: JSON.stringify(data)

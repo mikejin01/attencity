@@ -1,9 +1,12 @@
+/* global __WP_BUILD__ */
 // Prerendered sitemap listing every route the site publishes (plan §8.3).
 // `lastmod` uses each post's own date; static pages use the build date.
 import { site, services, caseStudiesPage, insightsPage } from '$lib/content/attencity.js';
 import { caseStudies, insights } from '$lib/content/posts.js';
 
-export const prerender = true;
+// Prerendered for the static build; in the WordPress shell nothing is
+// prerendered — WordPress serves the page and the SPA renders it.
+export const prerender = !__WP_BUILD__;
 
 const BUILT = new Date().toISOString().slice(0, 10);
 

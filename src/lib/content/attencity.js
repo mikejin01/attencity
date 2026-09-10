@@ -10,13 +10,18 @@
 // Anything still marked `interim: true` is stand-in text awaiting the owner.
 // =====================================================================
 import { base } from '$app/paths';
+import { assetRoot } from '$lib/wp/runtime.js';
 import { mediaSizes } from './media-sizes.js';
 
 export { services, companyServices, serviceBySlug } from './services.js';
 export { clientLogos, clientCategories, networkGroups, placements } from './network.js';
 
-/** Absolute (base-aware) path to a file in static/assets/attencity/. */
-export const asset = (file) => `${base}/assets/attencity/${file}`;
+/**
+ * Absolute path to a file in static/assets/attencity/.
+ * `assetRoot()` is `base` in the static build and the WordPress theme
+ * directory in the WP_BUILD shell — see src/lib/wp/runtime.js.
+ */
+export const asset = (file) => `${assetRoot()}/assets/attencity/${file}`;
 /** Base-aware internal route. Routes always end with a slash (trailingSlash = 'always'). */
 export const route = (path) => `${base}${path}`;
 /** `[width, height]` for any WebP under static/assets/attencity/, or null. */
