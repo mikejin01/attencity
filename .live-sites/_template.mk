@@ -1,4 +1,4 @@
-# Per-site SiteGround SSH + deploy config TEMPLATE.
+# Per-site WordPress SSH + deploy config TEMPLATE.
 #
 # HOW TO USE
 #   1. Copy this file to .live-sites/<site_key>.mk  (e.g. .live-sites/attencity.mk).
@@ -12,26 +12,24 @@
 #   - Only this _template.mk is committed. Real .live-sites/*.mk files are
 #     gitignored. Never paste real credentials into this file.
 #   - Key auth only. Never put passwords here. The private key lives outside
-#     the repo at SITEGROUND_IDENTITY_FILE, chmod 600.
+#     the repo at WP_IDENTITY_FILE, chmod 600.
 
 # ----- SSH connection -----
-# Site Tools -> Devs -> SSH Keys Manager shows the username, hostname and port.
-#
-# NOTE for Attencity: ssh.attencity.com does NOT resolve, because the DNS zone
-# is hosted at WordPress.com and no `ssh` record exists there. Use the hostname
-# SiteGround shows you, or the server IP (35.209.60.242), or add an `ssh` A
-# record in the WordPress.com DNS editor pointing at that IP.
-SITEGROUND_USER           := REPLACE_WITH_SSH_USER
-SITEGROUND_DOMAIN         := attencity.com
-SITEGROUND_HOST           := REPLACE_WITH_SSH_HOST
-SITEGROUND_PORT           := 18765
-SITEGROUND_IDENTITY_FILE  := ~/.ssh/siteground
+# WordPress.com: Settings -> SFTP/SSH generates the username. The host and port
+# are the same for every site. This whole screen needs a Business or Commerce
+# plan; on Premium there is no shell and the theme goes up through
+# Appearance -> Themes -> Upload instead.
+WP_USER           := REPLACE_WITH_SSH_USER
+WP_DOMAIN         := attencity.com
+WP_HOST           := ssh.wp.com
+WP_PORT           := 22
+WP_IDENTITY_FILE  := ~/.ssh/wpcom_attencity_ed25519
 
 # ----- WordPress paths on the server -----
-# Docroot is almost always www/<domain>/public_html on SiteGround. Confirm with
-# `make ssh` then `ls www/` before the first push.
-SITEGROUND_DOCROOT        := www/$(SITEGROUND_DOMAIN)/public_html
+# WordPress.com Atomic serves the site from /srv/htdocs. Confirm it on the
+# first connection (make ssh, then pwd and ls) before trusting a push.
+WP_DOCROOT        := /srv/htdocs
 
 # Theme folder name under wp-content/themes/.
-SITEGROUND_THEME_NAME     := attencity
-SITEGROUND_REMOTE_PATH    := $(SITEGROUND_DOCROOT)/wp-content/themes/$(SITEGROUND_THEME_NAME)/
+WP_THEME_NAME     := attencity
+WP_REMOTE_PATH    := $(WP_DOCROOT)/wp-content/themes/$(WP_THEME_NAME)/

@@ -1,5 +1,18 @@
 # Where attencity.com actually lives
 
+> **Decision, 2026-09-10:** Attencity is going to **WordPress.com**, not
+> SiteGround. Everything below still describes where the domain resolves *today*
+> and is kept because the move has not happened yet. The one hard constraint is
+> that installing a custom theme, and getting SFTP/SSH, both require the
+> **Business** plan. The site is on Premium, which cannot do either.
+>
+> The move is: upgrade to Business, upload the theme zip, turn off "Coming
+> soon", then repoint the domain's A record away from the SiteGround server.
+> There is no content migration to do, because the theme *is* the whole site.
+> What would be lost is anything living only in the old install: form
+> submissions and any posts written there.
+
+
 Verified 2026-09-10 from public DNS, WHOIS, the live site's HTTP headers, and
 the WordPress.com public API. Written down because the obvious assumption is
 wrong and cost time once already.

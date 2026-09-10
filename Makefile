@@ -1,14 +1,16 @@
 # ============================================================================
-#  Attencity — SiteGround WordPress deployment
+#  Attencity — WordPress deployment
 #
-#  The live attencity.com runs WordPress on SiteGround (Google Cloud IP
-#  35.209.60.242, SSH on port 18765). WordPress.com holds only the domain
-#  registration and the DNS zone — it is NOT the host. See docs/hosting-facts.md.
+#  Target: WordPress.com. SSH and SFTP there need a Business or Commerce plan;
+#  on Premium there is no shell at all and the theme has to go up through
+#  Appearance -> Themes -> Upload instead. See docs/hosting-facts.md.
 #
-#  Quick start
-#    1. Get SiteGround Site Tools access for the Attencity account.
-#    2. Site Tools -> Devs -> SSH Keys Manager -> Import ~/.ssh/siteground.pub
-#       (or generate a new pair). Note the username, hostname and port.
+#  Note the domain still resolves to the old SiteGround server until its DNS
+#  is repointed — `make dns-status` shows where it actually goes.
+#
+#  Quick start (once the site is on Business or Commerce)
+#    1. WordPress.com -> Settings -> SFTP/SSH -> create credentials.
+#    2. Add ~/.ssh/wpcom_attencity_ed25519.pub under Security -> SSH key.
 #    3. cp .live-sites/_template.mk .live-sites/attencity.mk  and fill it in.
 #    4. make test-connection          <-- the go/no-go gate. Nothing proceeds
 #                                         until this passes.
@@ -37,38 +39,40 @@ else ifeq ($(words $(SITES_AVAILABLE)),1)
 endif
 
 # ----- SSH connection (?= so a .live-sites fragment can override) -----
-# One key pair is shared across every site in the same SiteGround account.
-# Attencity is on a DIFFERENT server (35.209.60.242) from the iDeal sites
-# (c1114776.sgvps.net / 35.212.98.26), so it needs its own key import and
-# very likely its own username.
-SITEGROUND_USER           ?= REPLACE_WITH_SSH_USER
-SITEGROUND_DOMAIN         ?= attencity.com
-SITEGROUND_HOST           ?= REPLACE_WITH_SSH_HOST
-SITEGROUND_PORT           ?= 18765
-SITEGROUND_IDENTITY_FILE  ?= ~/.ssh/siteground
+# WordPress.com uses one shared host for every site; the username is generated
+# per site in the dashboard, so it is the only value that cannot be defaulted.
+# The key is dedicated to WordPress.com rather than shared with the SiteGround
+# client sites, so a problem at one vendor stays at that vendor.
+WP_USER           ?= REPLACE_WITH_SSH_USER
+WP_DOMAIN         ?= attencity.com
+WP_HOST           ?= ssh.wp.com
+WP_PORT           ?= 22
+WP_IDENTITY_FILE  ?= ~/.ssh/wpcom_attencity_ed25519
 
 # The real public domain, used only by the read-only `make dns-status`.
 LIVE_DOMAIN               ?= attencity.com
 
 # ----- WordPress paths on the server -----
-SITEGROUND_DOCROOT        ?= www/$(SITEGROUND_DOMAIN)/public_html
-SITEGROUND_THEME_NAME     ?= attencity
-SITEGROUND_REMOTE_PATH    ?= $(SITEGROUND_DOCROOT)/wp-content/themes/$(SITEGROUND_THEME_NAME)/
+# WordPress.com Atomic puts the site under /srv/htdocs. Confirm it on the first
+# connection (`make ssh`, then `pwd` and `ls`) before trusting a push.
+WP_DOCROOT        ?= /srv/htdocs
+WP_THEME_NAME     ?= attencity
+WP_REMOTE_PATH    ?= $(WP_DOCROOT)/wp-content/themes/$(WP_THEME_NAME)/
 
 # ============================================================
 #  Nothing below here should need editing
 # ============================================================
 
 LOCAL_THEME_DIR   := wordpress-theme
-SITEGROUND_DIR    := ./siteground
+WP_DIR    := ./siteground
 LIVE_CONTENT_DIR  := .content-sync
 MERGE_SCRIPT      := scripts/merge-live-content.mjs
 
 RSYNC_OPTS      := -avz --delete --exclude='.DS_Store' --exclude='*.zip' --exclude='node_modules'
-RSYNC_SSH_OPTS  := -e "ssh -p $(SITEGROUND_PORT) -i $(SITEGROUND_IDENTITY_FILE) -o IdentitiesOnly=yes"
-RSYNC_HOST      := $(SITEGROUND_USER)@$(SITEGROUND_HOST)
-SSH_OPTS        := -p $(SITEGROUND_PORT) -i $(SITEGROUND_IDENTITY_FILE) -o IdentitiesOnly=yes
-WP              := cd $(SITEGROUND_DOCROOT) && wp
+RSYNC_SSH_OPTS  := -e "ssh -p $(WP_PORT) -i $(WP_IDENTITY_FILE) -o IdentitiesOnly=yes"
+RSYNC_HOST      := $(WP_USER)@$(WP_HOST)
+SSH_OPTS        := -p $(WP_PORT) -i $(WP_IDENTITY_FILE) -o IdentitiesOnly=yes
+WP              := cd $(WP_DOCROOT) && wp
 
 .PHONY: help info preflight test-connection ssh connect build push build-and-push \
         pull purge-cache push-functions push-styles push-header \
@@ -101,7 +105,7 @@ help:
 	@echo ""
 	@echo "Connection:"
 	@echo "  make info                 Show the resolved configuration"
-	@echo "  make dns-status           Where $(LIVE_DOMAIN) points now vs the SiteGround IP"
+	@echo "  make dns-status           Where $(LIVE_DOMAIN) actually resolves today"
 	@echo "  make ssh / connect        Interactive shell on the live server"
 	@echo "  make list-sites           List configured .live-sites/ fragments"
 	@echo ""
@@ -110,12 +114,12 @@ help:
 
 info:
 	@echo "Site:          $(if $(SITE),$(SITE) (from .live-sites/$(SITE).mk),<Makefile defaults — no fragment loaded>)"
-	@echo "Host:          $(SITEGROUND_HOST)"
-	@echo "User:          $(SITEGROUND_USER)"
-	@echo "Port:          $(SITEGROUND_PORT)"
-	@echo "Identity file: $(SITEGROUND_IDENTITY_FILE)"
-	@echo "Docroot:       $(SITEGROUND_DOCROOT)"
-	@echo "Theme path:    $(SITEGROUND_REMOTE_PATH)"
+	@echo "Host:          $(WP_HOST)"
+	@echo "User:          $(WP_USER)"
+	@echo "Port:          $(WP_PORT)"
+	@echo "Identity file: $(WP_IDENTITY_FILE)"
+	@echo "Docroot:       $(WP_DOCROOT)"
+	@echo "Theme path:    $(WP_REMOTE_PATH)"
 	@echo "Local theme:   $(LOCAL_THEME_DIR)/"
 
 # Tells you exactly what is still missing, instead of failing with a cryptic
@@ -124,13 +128,11 @@ preflight:
 	@echo "Preflight for Attencity deployment"
 	@echo "──────────────────────────────────"
 	@ok=1; \
-	if [ "$(SITEGROUND_USER)" = "REPLACE_WITH_SSH_USER" ]; then \
-	  echo "  ✗ SSH username not set   — Site Tools -> Devs -> SSH Keys Manager"; ok=0; \
-	else echo "  ✓ SSH username          $(SITEGROUND_USER)"; fi; \
-	if [ "$(SITEGROUND_HOST)" = "REPLACE_WITH_SSH_HOST" ]; then \
-	  echo "  ✗ SSH host not set       — same screen (or use the server IP)"; ok=0; \
-	else echo "  ✓ SSH host              $(SITEGROUND_HOST)"; fi; \
-	key=$$(eval echo $(SITEGROUND_IDENTITY_FILE)); \
+	if [ "$(WP_USER)" = "REPLACE_WITH_SSH_USER" ]; then \
+	  echo "  ✗ SSH username not set   — WordPress.com -> Settings -> SFTP/SSH (needs Business)"; ok=0; \
+	else echo "  ✓ SSH username          $(WP_USER)"; fi; \
+	echo "  ✓ SSH host              $(WP_HOST)"; \
+	key=$$(eval echo $(WP_IDENTITY_FILE)); \
 	if [ -f "$$key" ]; then echo "  ✓ Private key           $$key"; \
 	else echo "  ✗ Private key missing   $$key"; ok=0; fi; \
 	if [ -z "$(SITES_AVAILABLE)" ]; then \
@@ -162,32 +164,32 @@ push:
 	@if [ ! -d "$(LOCAL_THEME_DIR)" ]; then \
 		echo "❌ $(LOCAL_THEME_DIR)/ does not exist. Run: make build"; exit 1; \
 	fi
-	@echo "⬆️  Pushing $(LOCAL_THEME_DIR)/ → $(SITEGROUND_REMOTE_PATH)"
-	@rsync $(RSYNC_OPTS) $(RSYNC_SSH_OPTS) --progress $(LOCAL_THEME_DIR)/ $(RSYNC_HOST):$(SITEGROUND_REMOTE_PATH)
+	@echo "⬆️  Pushing $(LOCAL_THEME_DIR)/ → $(WP_REMOTE_PATH)"
+	@rsync $(RSYNC_OPTS) $(RSYNC_SSH_OPTS) --progress $(LOCAL_THEME_DIR)/ $(RSYNC_HOST):$(WP_REMOTE_PATH)
 	@echo "✅ Theme uploaded."
 
 build-and-push: build push purge-cache
 	@echo "🎉 Deployment complete."
 
 pull:
-	@mkdir -p $(SITEGROUND_DIR)
-	@rsync -avz $(RSYNC_SSH_OPTS) --progress $(RSYNC_HOST):$(SITEGROUND_REMOTE_PATH) $(SITEGROUND_DIR)/
-	@echo "✅ Live theme downloaded to $(SITEGROUND_DIR)/"
+	@mkdir -p $(WP_DIR)
+	@rsync -avz $(RSYNC_SSH_OPTS) --progress $(RSYNC_HOST):$(WP_REMOTE_PATH) $(WP_DIR)/
+	@echo "✅ Live theme downloaded to $(WP_DIR)/"
 
 purge-cache:
 	@echo "🧹 Purging caches…"
 	@ssh $(SSH_OPTS) $(RSYNC_HOST) "$(WP) cache flush" || echo "⚠️  Could not flush the WP object cache — do it in Site Tools."
-	@ssh $(SSH_OPTS) $(RSYNC_HOST) "$(WP) sg purge" || echo "⚠️  Could not purge SiteGround Dynamic Cache — do it in Site Tools."
+	@ssh $(SSH_OPTS) $(RSYNC_HOST) "$(WP) sg purge" 2>/dev/null || echo "   (no host-level cache command — clear the edge cache from the dashboard if needed)"
 
 push-functions:
-	@rsync -avz $(RSYNC_SSH_OPTS) --progress $(LOCAL_THEME_DIR)/functions.php $(RSYNC_HOST):$(SITEGROUND_REMOTE_PATH)
+	@rsync -avz $(RSYNC_SSH_OPTS) --progress $(LOCAL_THEME_DIR)/functions.php $(RSYNC_HOST):$(WP_REMOTE_PATH)
 	@$(MAKE) --no-print-directory purge-cache
 
 push-styles:
-	@rsync -avz $(RSYNC_SSH_OPTS) --progress $(LOCAL_THEME_DIR)/style.css $(RSYNC_HOST):$(SITEGROUND_REMOTE_PATH)
+	@rsync -avz $(RSYNC_SSH_OPTS) --progress $(LOCAL_THEME_DIR)/style.css $(RSYNC_HOST):$(WP_REMOTE_PATH)
 
 push-header:
-	@rsync -avz $(RSYNC_SSH_OPTS) --progress $(LOCAL_THEME_DIR)/header.php $(LOCAL_THEME_DIR)/favicon.png $(RSYNC_HOST):$(SITEGROUND_REMOTE_PATH)
+	@rsync -avz $(RSYNC_SSH_OPTS) --progress $(LOCAL_THEME_DIR)/header.php $(LOCAL_THEME_DIR)/favicon.png $(RSYNC_HOST):$(WP_REMOTE_PATH)
 	@$(MAKE) --no-print-directory purge-cache
 
 # ------------------------------------------------------------------ content
@@ -207,7 +209,7 @@ $(LIVE_CONTENT_DIR)/.exported:
 
 pull-content:
 	@if [ ! -f "$(MERGE_SCRIPT)" ]; then echo "❌ $(MERGE_SCRIPT) not written yet (playbook Part 4.3)."; exit 1; fi
-	@echo "⬇️  Exporting live content from $(SITEGROUND_DOMAIN)…"
+	@echo "⬇️  Exporting live content from $(WP_DOMAIN)…"
 	@rm -f $(LIVE_CONTENT_DIR)/.exported
 	@$(MAKE) --no-print-directory $(LIVE_CONTENT_DIR)/.exported
 	@node $(MERGE_SCRIPT)
@@ -223,8 +225,8 @@ check-content-drift:
 # even though the site is hosted on SiteGround, so this watches both ends.
 # Public resolvers are asked on purpose so a local cache cannot hide propagation.
 dns-status:
-	@ip=$$(dig +short $(SITEGROUND_DOMAIN) A | head -1); \
-	echo "Current A record for $(SITEGROUND_DOMAIN):  $$ip"; \
+	@ip=$$(dig +short $(WP_DOMAIN) A | head -1); \
+	echo "Current A record for $(WP_DOMAIN):  $$ip"; \
 	echo ""; \
 	for r in 1.1.1.1 8.8.8.8; do \
 	  echo "── as seen by $$r"; \
