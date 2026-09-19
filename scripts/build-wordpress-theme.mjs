@@ -698,6 +698,7 @@ add_filter('manage_lead_submission_posts_columns', function ($cols) {
         'title'       => 'Name',
         'lead_email'  => 'Email',
         'lead_company'=> 'Company',
+        'lead_sent'   => 'Emailed',
         'lead_status' => 'Status',
         'date'        => 'Received',
     );
@@ -709,6 +710,20 @@ add_action('manage_lead_submission_posts_custom_column', function ($col, $post_i
         echo $v ? '<a href="mailto:' . esc_attr($v) . '">' . esc_html($v) . '</a>' : '—';
     } elseif ($col === 'lead_company') {
         echo esc_html(get_post_meta($post_id, 'lead_company', true) ?: '—');
+    } elseif ($col === 'lead_sent') {
+        $v = (string) get_post_meta($post_id, 'lead_emailed', true);
+        if ($v === 'yes') {
+            echo '<span style="color:#065f46;font-weight:600;">Sent</span>';
+        } elseif ($v === 'no-address') {
+            echo '<span style="color:#92400e;font-weight:600;">No address set</span>';
+        } elseif ($v === 'no') {
+            $mail = get_option('${P}_mail_last', array());
+            echo '<span style="color:#b91c1c;font-weight:600;">Failed</span>'
+               . (empty($mail['why']) ? '' : '<br><span class="description">' . esc_html($mail['why']) . '</span>');
+        } else {
+            // Saved by a theme build from before send status was recorded.
+            echo '<span class="description">—</span>';
+        }
     } elseif ($col === 'lead_status') {
         if (get_post_meta($post_id, 'lead_reviewed', true) === '1') {
             echo '<span style="color:#065f46;font-weight:600;">Reviewed</span>';
