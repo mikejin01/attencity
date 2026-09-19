@@ -3,10 +3,12 @@
 	import PageHero from '$lib/editorial/sections/PageHero.svelte';
 	import Breadcrumbs from '$lib/editorial/sections/Breadcrumbs.svelte';
 	import StatTiles from '$lib/editorial/sections/StatTiles.svelte';
+	import CaseArc from '$lib/editorial/sections/CaseArc.svelte';
+	import Testimonials from '$lib/editorial/sections/Testimonials.svelte';
 	import Gallery from '$lib/editorial/sections/Gallery.svelte';
 	import PostFooter from '$lib/editorial/sections/PostFooter.svelte';
 	import ContactCta from '$lib/editorial/sections/ContactCta.svelte';
-	import { caseStudyBySlug, formatDate } from '$lib/content/posts.js';
+	import { caseStudyBySlug, formatDate, serviceTags } from '$lib/content/posts.js';
 	import { breadcrumbs, postGraph, eventGraph } from '$lib/seo/jsonld.js';
 	import { route } from '$lib/content/attencity.js';
 	import { wpPosts } from '$lib/wp/posts.svelte.js';
@@ -55,6 +57,10 @@
 				<li>
 					<span>When</span><time datetime={post.date}>{post.dateLabel ?? formatDate(post.date)}</time>
 				</li>
+				{#if post.industry}<li><span>Industry</span>{post.industry}</li>{/if}
+				{#if serviceTags(post).length}
+					<li><span>Services</span>{serviceTags(post).join(' · ')}</li>
+				{/if}
 			</ul>
 		</div>
 	</PageHero>
@@ -62,6 +68,7 @@
 
 	<div id="page-body">
 		<StatTiles stats={post.stats} title="At a glance" band="alt" id="at-a-glance" />
+		<CaseArc {post} />
 
 		<section class="page-section padding-md">
 			<div class="container container--md">
@@ -76,6 +83,9 @@
 			</div>
 		</section>
 
+		{#if post.testimonial}
+			<Testimonials items={[post.testimonial]} heading={false} band="white" id="quote" />
+		{/if}
 		<Gallery images={post.gallery} title="From the day" band="alt" id="gallery" />
 		<PostFooter {post} />
 		<ContactCta formLocation="case-study:{post.slug}" idPrefix="cs" />

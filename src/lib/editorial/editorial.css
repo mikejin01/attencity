@@ -110,7 +110,13 @@
 .info-links { display: flex; flex-wrap: wrap; gap: 12px; }
 
 /* ---------- layout primitives ---------- */
-.container { width: 100%; padding: 0 1rem; margin: 0 auto; position: relative; z-index: 2; }
+/* Side gutter. 1rem left the footer lockup and the section copy sitting almost
+   on the viewport edge on laptops (owner feedback: "spacing is too close to
+   edge"), so the gutter now opens up with the viewport. max-width is the
+   border box, so the content column narrows rather than the page growing. */
+.container { width: 100%; padding: 0 1.25rem; margin: 0 auto; position: relative; z-index: 2; }
+@media (min-width: 768px) { .container { padding: 0 2rem; } }
+@media (min-width: 1200px) { .container { padding: 0 3rem; } }
 .container--md { max-width: calc(var(--u) * 65); }
 .container--lg { max-width: calc(var(--u) * 90); }
 .container--fluid { max-width: none; padding: 0; }
@@ -696,7 +702,7 @@ a.contact-value:hover { color: var(--orange-ink); }
 }
 @media (min-width: 768px) {
 	.footer-row {
-		grid-template-columns: 1.6fr 1fr 1fr 0.9fr; gap: 2rem;
+		grid-template-columns: 1.5fr 1fr 1fr 1.1fr; gap: 2rem;
 		text-align: left; justify-items: start;
 	}
 }
@@ -715,7 +721,7 @@ a.contact-value:hover { color: var(--orange-ink); }
 	transition: color 0.2s ease;
 }
 .f-col-menu a:hover, .f-col-menu button:hover { color: var(--orange); }
-.site-footer__social { display: flex; gap: 0.75rem; justify-content: center; }
+.site-footer__social { display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center; }
 @media (min-width: 768px) {
 	.site-footer__social { justify-content: flex-start; }
 }
@@ -825,6 +831,47 @@ a.contact-value:hover { color: var(--orange-ink); }
 .post-card__stat b { font-family: var(--heading-font); font-size: 17px; color: var(--orange-ink); margin-right: 0.25em; }
 .post-grid--compact .post-card__media { aspect-ratio: 16 / 9; }
 .post-grid--compact .post-card__excerpt { display: none; }
+/* service + industry labels on a card (owner feedback §4) */
+.post-card__tags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.8rem; }
+.post-card__tag {
+	padding: 2px 8px; border-radius: 999px;
+	border: 1px solid rgba(0, 0, 0, 0.12); background: var(--bg-alt);
+	font-family: var(--heading-font); font-weight: 700;
+	font-size: 10.5px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--ink-faint);
+	line-height: 1.6;
+}
+.post-card__tag--industry { border-color: rgba(197, 61, 0, 0.3); background: rgba(255, 80, 0, 0.08); color: var(--orange-ink); }
+.post-grid__empty { margin: 1.5rem 0 0; text-align: center; color: var(--ink-faint); }
+
+/* ---------- listing filters ---------- */
+.post-filters { margin: 2.25rem 0 2rem; display: flex; flex-direction: column; gap: 1rem; }
+.post-filters__row { display: flex; flex-direction: column; gap: 0.55rem; }
+@media (min-width: 768px) {
+	.post-filters__row { flex-direction: row; align-items: baseline; gap: 1rem; }
+	.post-filters__label { flex: 0 0 8.5rem; }
+}
+.post-filters__label { margin-bottom: 0; color: var(--orange-ink); }
+/* Named `filter-chip`, not `chip`: `.chip` is already the tag pill in the post
+   footer, defined further down this file, and would win the cascade. */
+.filter-chips { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.filter-chip {
+	padding: 6px 14px; border-radius: 999px; cursor: pointer;
+	border: 1px solid rgba(0, 0, 0, 0.16); background: transparent; color: var(--ink-soft);
+	font-family: var(--heading-font); font-weight: 700;
+	font-size: 12px; letter-spacing: 1.1px; text-transform: uppercase; line-height: 1.4;
+	transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+.filter-chip:hover { border-color: var(--orange); color: var(--orange-ink); }
+.filter-chip--on { background: var(--dark); border-color: var(--dark); color: #fff; }
+.filter-chip--on:hover { background: var(--orange); border-color: var(--orange); color: #fff; }
+.post-filters__count {
+	margin: 0; font-size: 13.5px; color: var(--ink-faint);
+	display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.75rem;
+}
+.post-filters__clear {
+	background: none; border: 0; padding: 0; cursor: pointer; font: inherit;
+	color: var(--orange-ink); text-decoration: underline; text-underline-offset: 3px;
+}
 
 /* ---------- stat tiles (case-study "at a glance", service proof) ---------- */
 .stat-tiles__title, .gallery__title, .faq__title, .svc-page__heading, .svc-summary__heading { margin-bottom: 2rem; }
@@ -846,6 +893,147 @@ a.contact-value:hover { color: var(--orange-ink); }
 .page-section--dark .stat-tile__value { color: #fff; }
 .stat-tile__label { font-size: 13.5px; line-height: 1.45; color: var(--ink-soft); }
 .page-section--dark .stat-tile__label { color: rgba(255, 255, 255, 0.72); }
+
+/* ---------- the arc: offline → online → press → GEO ---------- */
+/* A four-step track. Stacked on phones with a vertical rail down the left,
+   four columns from 900px with the chevron sitting in the gap. Steps the
+   engagement did not include are outlined rather than filled, so the arc can
+   be shown whole without the open stages reading as claims. */
+.arc {
+	list-style: none; margin: 2.25rem 0 0; padding: 0;
+	display: grid; grid-template-columns: 1fr; gap: 1rem;
+	counter-reset: arc;
+}
+@media (min-width: 900px) {
+	.arc { grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
+}
+.arc-step {
+	position: relative; counter-increment: arc;
+	display: flex; flex-direction: column;
+	padding: 1.5rem 1.35rem;
+	background: #fff; border: 1px solid rgba(0, 0, 0, 0.07); border-radius: 14px;
+	border-top: 3px solid var(--orange);
+}
+.page-section--alt .arc-step { background: #fff; }
+/* the chevron between steps */
+.arc-step + .arc-step::before {
+	content: ''; position: absolute; z-index: 1;
+	width: 9px; height: 9px;
+	border-right: 2px solid var(--orange); border-bottom: 2px solid var(--orange);
+	left: 50%; top: -0.75rem; transform: translate(-50%, -50%) rotate(45deg);
+}
+@media (min-width: 900px) {
+	.arc-step + .arc-step::before {
+		left: -0.75rem; top: 3.1rem;
+		transform: translate(-50%, -50%) rotate(-45deg);
+	}
+}
+.arc-step--next {
+	background: transparent; border-style: dashed; border-color: rgba(0, 0, 0, 0.16);
+	border-top: 3px dashed rgba(0, 0, 0, 0.16);
+}
+.page-section--alt .arc-step--next { background: transparent; }
+.arc-step--next + .arc-step::before,
+.arc-step + .arc-step--next::before { border-color: rgba(0, 0, 0, 0.22); }
+.arc-step__head { display: flex; flex-direction: column; gap: 0.15rem; margin-bottom: 0.9rem; }
+.arc-step__label {
+	font-family: var(--heading-font); font-weight: 700;
+	font-size: 11.5px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--orange-ink);
+}
+.arc-step--next .arc-step__label { color: var(--ink-faint); }
+.arc-step__stage { font-size: 13.5px; line-height: 1.35; color: var(--ink-faint); }
+.arc-step__metric {
+	display: flex; flex-direction: column; gap: 0.25rem;
+	margin: 0 0 0.9rem;
+}
+/* Reserve the slot only once the steps sit side by side and their headlines
+   have to line up; stacked, it is just a hole under the badge. */
+@media (min-width: 900px) { .arc-step__metric { min-height: 3.4rem; } }
+.arc-step__metric b {
+	font-family: var(--heading-font); font-weight: 700; font-size: clamp(28px, 3vw, 38px);
+	line-height: 1; color: var(--ink); letter-spacing: 0;
+}
+.arc-step__metric span { font-size: 13px; line-height: 1.4; color: var(--ink-soft); }
+.arc-step__metric--badge { justify-content: flex-start; }
+.arc-step__metric--badge span {
+	align-self: flex-start;
+	padding: 3px 10px; border-radius: 999px;
+	border: 1px solid rgba(197, 61, 0, 0.3); background: rgba(255, 80, 0, 0.08);
+	font-family: var(--heading-font); font-weight: 700;
+	font-size: 11px; letter-spacing: 1.3px; text-transform: uppercase; color: var(--orange-ink);
+}
+.arc-step--next .arc-step__metric--badge span {
+	border: 1px dashed rgba(0, 0, 0, 0.22); background: transparent; color: var(--ink-faint);
+}
+.arc-step__title {
+	font-family: var(--heading-font); font-weight: 700; font-size: 20px; line-height: 1.1;
+	text-transform: uppercase; letter-spacing: 0; color: var(--ink); margin: 0 0 0.5rem;
+}
+.arc-step--next .arc-step__title { color: var(--ink-soft); }
+.arc-step__copy { margin: 0; font-size: 14.5px; line-height: 1.6; color: var(--ink-soft); }
+
+/* ---------- service results (outcome numbers with their sentence) ---------- */
+.result-cards {
+	list-style: none; margin: 2rem 0 0; padding: 0;
+	display: grid; grid-template-columns: 1fr; gap: 1rem;
+}
+@media (min-width: 720px) { .result-cards { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); } }
+.result-card {
+	display: flex; flex-direction: column; gap: 0.35rem; padding: 1.6rem 1.4rem;
+	background: #fff; border: 1px solid rgba(0, 0, 0, 0.07); border-radius: 14px;
+	border-left: 3px solid var(--orange);
+}
+.result-card__value {
+	font-family: var(--heading-font); font-weight: 700; font-size: clamp(30px, 3.4vw, 44px);
+	line-height: 1; color: var(--ink); letter-spacing: 0;
+}
+.result-card__label { font-size: 13.5px; line-height: 1.45; color: var(--ink-soft); }
+.result-card__context { margin: 0.5rem 0 0; font-size: 14px; line-height: 1.6; color: var(--ink-faint); }
+.result-cards__note { margin: 1.25rem 0 0; font-size: 13px; line-height: 1.55; color: var(--ink-faint); text-align: center; }
+
+/* ---------- client testimonials ---------- */
+.quote-grid {
+	list-style: none; margin: 2.25rem 0 0; padding: 0;
+	display: grid; grid-template-columns: 1fr; gap: 1.25rem;
+}
+@media (min-width: 720px) { .quote-grid { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); } }
+.quote-grid--single { max-width: 720px; margin-inline: auto; }
+.quote-card {
+	height: 100%; margin: 0;
+	display: flex; flex-direction: column; gap: 1.25rem;
+	padding: 1.9rem 1.6rem 1.6rem;
+	background: #fff; border: 1px solid rgba(0, 0, 0, 0.07); border-radius: 16px;
+}
+.page-section--dark .quote-card { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); }
+.quote-card__quote {
+	margin: 0; flex: 1 1 auto; position: relative;
+	padding-top: 1.9rem;
+	font-size: clamp(16px, 1.5vw, 18px); line-height: 1.6; color: var(--ink);
+}
+.quote-card__quote::before {
+	content: '\201C'; position: absolute; top: -0.35rem; left: -0.1rem;
+	font-family: var(--heading-font); font-weight: 700; font-size: 62px; line-height: 1;
+	color: var(--orange);
+}
+.page-section--dark .quote-card__quote { color: rgba(255, 255, 255, 0.92); }
+.quote-card__who { display: flex; align-items: center; gap: 0.9rem; }
+.quote-card__photo, .quote-card__monogram {
+	width: 52px; height: 52px; border-radius: 50%; flex: 0 0 auto;
+}
+.quote-card__photo { object-fit: cover; }
+.quote-card__monogram {
+	display: flex; align-items: center; justify-content: center;
+	background: var(--bg-alt); color: var(--ink-faint);
+	font-family: var(--heading-font); font-weight: 700; font-size: 18px; letter-spacing: 0.5px;
+}
+.quote-card__id { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+.quote-card__name {
+	font-family: var(--heading-font); font-weight: 700; font-size: 18px;
+	text-transform: uppercase; letter-spacing: 0; color: var(--ink); line-height: 1.15;
+}
+.page-section--dark .quote-card__name { color: #fff; }
+.quote-card__role { font-size: 13.5px; line-height: 1.4; color: var(--ink-faint); }
+.page-section--dark .quote-card__role { color: rgba(255, 255, 255, 0.66); }
 
 /* ---------- galleries ---------- */
 .gallery {
@@ -1140,6 +1328,10 @@ a.contact-value:hover { color: var(--orange-ink); }
 .map-embed iframe { display: block; width: 100%; height: 260px; border: 0; }
 .modal--qr { width: min(400px, 100%); }
 .qr-image { width: min(260px, 70vw); height: auto; margin: 0 auto; border-radius: 10px; background: #fff; padding: 8px; }
+/* The dialog is dark; --orange-ink is tuned for small text on white. */
+.modal--qr .contact-link { align-self: center; margin-top: 0; color: var(--orange); }
+.modal--qr .contact-link:hover { color: #fff; }
+.modal--qr .modal-sub:last-child { margin: 1.1rem 0 0; }
 
 /* ---------- footer additions ---------- */
 .footer-address { display: flex; flex-direction: column; gap: 0.2rem; margin-top: 0.9rem; font-style: normal; font-size: 14px; line-height: 1.5; color: rgba(255, 255, 255, 0.72); }
@@ -1151,8 +1343,29 @@ a.contact-value:hover { color: var(--orange-ink); }
 .footer-handles a:hover { color: var(--orange); }
 .footer-handles__net { font-family: var(--heading-font); font-weight: 700; font-size: 10.5px; letter-spacing: 1.4px; text-transform: uppercase; color: rgba(255, 255, 255, 0.45); }
 
-/* ---------- form additions (job title / heard-from / opt-in) ---------- */
+/* ---------- form additions (service interest / job title / heard-from / opt-in) ---------- */
 .field__other { margin-top: 0.45rem; }
+/* "What are you interested in?" — a fieldset rather than a select, because an
+   enquiry is usually about two or three services at once. `.field` gives it the
+   grid placement and error colour; the legend borrows the label styling, which
+   `.field label` cannot reach. */
+.field-choices { border: 0; padding: 0; margin: 0; min-width: 0; }
+.field-choices legend {
+	padding: 0; margin-bottom: 0.55rem;
+	font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 600;
+	color: var(--text-soft);
+}
+.form-light .field-choices legend { color: var(--ink-soft); }
+.choice-grid { display: grid; grid-template-columns: 1fr; gap: 0.5rem 1rem; }
+@media (min-width: 520px) { .choice-grid { grid-template-columns: 1fr 1fr; } }
+.choice {
+	display: flex; gap: 0.6rem; align-items: flex-start;
+	font-size: 14px; line-height: 1.4; cursor: pointer;
+}
+.choice input { width: 17px; height: 17px; margin-top: 0.1rem; accent-color: var(--orange); flex: 0 0 auto; }
+.form-dark .choice { color: rgba(255, 255, 255, 0.78); }
+.form-light .choice { color: var(--ink-soft); }
+.field-choices.invalid legend { color: #d9483b; }
 .field-check { display: flex; gap: 0.65rem; align-items: flex-start; margin-top: 1.1rem; cursor: pointer; font-size: 14px; line-height: 1.5; }
 .field-check input { width: 17px; height: 17px; margin-top: 0.15rem; accent-color: var(--orange); flex: 0 0 auto; }
 .form-dark .field-check { color: rgba(255, 255, 255, 0.78); }

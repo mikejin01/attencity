@@ -20,6 +20,27 @@ stats:
     label: 'press placements'
   - value: '177M'
     label: 'estimated potential audience'
+industry: 'Retail'
+arc:
+  - stage: 'offline'
+    title: 'A two-day SoHo destination'
+    copy: 'One Mercer Street venue, 30+ vendors and 15+ sponsors — a Manhattan storefront weekend none of the small brands could have afforded alone.'
+    metric:
+      value: '8,000+'
+      label: 'attendees over two days'
+  - stage: 'online'
+    title: 'Workshops as the content engine'
+    copy: 'Creators were booked into whole-day workshops — Asian dessert making, candle making, phone-case design — so the content came out of taking part rather than posing at a step-and-repeat.'
+  - stage: 'press'
+    title: 'A release written with the floor plan'
+    copy: 'The distribution plan was drafted alongside the build, then tracked. Pickups included Business Insider, the Associated Press, Benzinga, StreetInsider, AsiaOne, Barchart, The Globe and Mail and Digital Journal.'
+    metric:
+      value: '571'
+      label: 'full-page placements, est. 177M reach'
+  - stage: 'geo'
+    status: 'next'
+    title: 'The coverage an assistant would read'
+    copy: '571 corroborating articles across named business outlets is exactly the source material a generative engine draws on. Structuring and claiming it is the step that turns this weekend into a permanent answer about the brands involved.'
 gallery:
   - file: 'work/soho-popup-3.webp'
     alt: 'Shoppers browsing a stationery table at the SoHo pop-up'

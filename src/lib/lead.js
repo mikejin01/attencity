@@ -1,11 +1,12 @@
 // =====================================================================
-// Lead-capture plumbing (plan §6.1): the two dropdowns the owner asked for,
+// Lead-capture plumbing (plan §6.1): the questions the owner asked for,
 // and the hidden channel fields that make them analysable.
 //
 // UTM parameters are read on the FIRST page view of a session and kept in
 // sessionStorage, so a visitor who lands on an ad, browses for ten minutes
 // and then submits from /contact/ is still attributed to the ad.
 // =====================================================================
+import { services } from './content/services.js';
 
 /** "How did you hear about us?" — plan §6.1. */
 export const HEARD_FROM = [
@@ -34,6 +35,17 @@ export const JOB_TITLES = [
 	'Creator / Public figure',
 	'Student',
 	'Other'
+];
+
+/**
+ * "What are you interested in?" — the seven services, read straight off
+ * services.js so the form can never list one the site does not sell, plus an
+ * escape hatch for people who are still working it out. Multi-select: an
+ * enquiry is very often two or three of these at once.
+ */
+export const SERVICE_INTERESTS = [
+	...services.map((s) => s.navTitle ?? s.title),
+	'Not sure yet — advise us'
 ];
 
 export const OTHER = 'Other';
@@ -85,20 +97,17 @@ export function attributionPayload(formLocation) {
 }
 
 /** GA4 `generate_lead`, if a tag is present. No-op otherwise. */
-export function trackLead({ jobTitle, heardFrom, formLocation }) {
+export function trackLead({ jobTitle, heardFrom, servicesInterested, formLocation }) {
 	if (typeof window === 'undefined') return;
-	window.dataLayer = window.dataLayer ?? [];
-	window.dataLayer.push({
-		event: 'generate_lead',
+	const detail = {
 		job_title: jobTitle,
 		heard_from: heardFrom,
+		services_interested: servicesInterested,
 		form_location: formLocation
-	});
+	};
+	window.dataLayer = window.dataLayer ?? [];
+	window.dataLayer.push({ event: 'generate_lead', ...detail });
 	if (typeof window.gtag === 'function') {
-		window.gtag('event', 'generate_lead', {
-			job_title: jobTitle,
-			heard_from: heardFrom,
-			form_location: formLocation
-		});
+		window.gtag('event', 'generate_lead', detail);
 	}
 }

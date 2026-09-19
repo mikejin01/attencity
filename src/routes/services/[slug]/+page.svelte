@@ -3,6 +3,7 @@
 	import PageHero from '$lib/editorial/sections/PageHero.svelte';
 	import Breadcrumbs from '$lib/editorial/sections/Breadcrumbs.svelte';
 	import StatTiles from '$lib/editorial/sections/StatTiles.svelte';
+	import ServiceResults from '$lib/editorial/sections/ServiceResults.svelte';
 	import PostGrid from '$lib/editorial/sections/PostGrid.svelte';
 	import Faq from '$lib/editorial/sections/Faq.svelte';
 	import ContactCta from '$lib/editorial/sections/ContactCta.svelte';
@@ -95,6 +96,7 @@
 		</div>
 	</section>
 
+	<ServiceResults results={p.results} band="alt" />
 	<StatTiles stats={p.stats} title={chrome.proofTitle} band="white" id="proof" />
 
 	{#if related.caseStudies.length}

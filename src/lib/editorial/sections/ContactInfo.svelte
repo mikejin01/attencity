@@ -1,6 +1,7 @@
-<!-- Contact page body: office address, phone, email, social accounts (with a
-     QR dialog for the accounts that have no public profile URL), a lazily
-     embedded map, and the light "Send us a message" form (plan §5.6). -->
+<!-- Contact page body: office address, phone, email, social accounts (each
+     with a QR dialog — the owner asked for one on every account, not just the
+     ones with no public profile URL), a lazily embedded map, and the light
+     "Send us a message" form (plan §5.6). -->
 <script>
 	import { site, contactPage, asset, dims } from '$lib/content/attencity.js';
 	import { socialIcons } from '$lib/editorial/icons.js';
@@ -83,10 +84,10 @@
 										<a class="contact-value" href={s.href} target="_blank" rel="noopener noreferrer">{s.handle}</a>
 									{:else}
 										<span class="contact-value">{s.handle}</span>
-										{#if s.note}<span class="social-note">{s.note}</span>{/if}
-										{#if s.qr}
-											<button class="contact-link" type="button" onclick={(e) => showQr(s, e)}>Show QR code</button>
-										{/if}
+									{/if}
+									{#if s.note}<span class="social-note">{s.note}</span>{/if}
+									{#if s.qr}
+										<button class="contact-link" type="button" onclick={(e) => showQr(s, e)}>Show QR code</button>
 									{/if}
 								</div>
 							</li>
@@ -131,6 +132,11 @@
 					height={dims(qrOpen.qr)?.height}
 					alt={qrOpen.qrAlt ?? `${qrOpen.name} QR code`}
 				/>
+				{#if qrOpen.href}
+					<p class="modal-sub">
+						<a class="contact-link" href={qrOpen.href} target="_blank" rel="noopener noreferrer">Open {qrOpen.name} instead</a>
+					</p>
+				{/if}
 			</div>
 		</div>
 	</div>

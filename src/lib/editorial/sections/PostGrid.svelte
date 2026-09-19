@@ -2,14 +2,31 @@
      "Recent work" / "Latest insights" rows, and the related-content blocks. -->
 <script>
 	import { asset, srcset, dims, route } from '$lib/content/attencity.js';
-	import { postHref, formatDate } from '$lib/content/posts.js';
+	import { postHref, formatDate, serviceTags } from '$lib/content/posts.js';
 	import { reveal } from '$lib/actions.js';
 	import { editableImage } from '$lib/wp/actions.svelte.js';
 
+	/** `children` renders between the section header and the grid — the
+	 *  case-study listing puts its filter chips there. `tags` adds the service
+	 *  and industry labels to each card. */
 	/** @type {{ posts: any[], eyebrow?: string, title?: string, sub?: string,
 	 *  cta?: {label: string, href: string}, band?: 'white'|'alt'|'dark', id?: string,
-	 *  compact?: boolean, headingLevel?: 2|3 }} */
-	let { posts, eyebrow = '', title = '', sub = '', cta, band = 'white', id, compact = false, headingLevel = 2 } = $props();
+	 *  compact?: boolean, headingLevel?: 2|3, tags?: boolean, empty?: string,
+	 *  children?: import('svelte').Snippet }} */
+	let {
+		posts,
+		eyebrow = '',
+		title = '',
+		sub = '',
+		cta,
+		band = 'white',
+		id,
+		compact = false,
+		headingLevel = 2,
+		tags = false,
+		empty = '',
+		children
+	} = $props();
 </script>
 
 <section
@@ -35,6 +52,8 @@
 			</div>
 		{/if}
 
+		{@render children?.()}
+
 		<ul class="post-grid" class:post-grid--compact={compact}>
 			{#each posts as p (p.slug)}
 				<li class="post-card" use:reveal>
@@ -58,6 +77,12 @@
 							</span>
 							<span class="post-card__title">{p.title}</span>
 							<span class="post-card__excerpt">{p.excerpt}</span>
+							{#if tags}
+								<span class="post-card__tags">
+									{#if p.industry}<span class="post-card__tag post-card__tag--industry">{p.industry}</span>{/if}
+									{#each serviceTags(p) as t (t)}<span class="post-card__tag">{t}</span>{/each}
+								</span>
+							{/if}
 							{#if p.stats?.length}
 								<span class="post-card__stats">
 									{#each p.stats.slice(0, 2) as s (s.label)}
@@ -70,6 +95,10 @@
 				</li>
 			{/each}
 		</ul>
+
+		{#if empty && !posts.length}
+			<p class="post-grid__empty">{empty}</p>
+		{/if}
 
 		{#if cta}
 			<div class="section-cta text-center">

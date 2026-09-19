@@ -1,8 +1,9 @@
 <!-- The lead form used inline on the home CTA, the contact page, every service
      CTA band, and inside the "Get in touch" modal.
 
-     Beyond name / email / company / message it asks the two questions the
-     owner wants for channel analysis (plan §1.1): job title and how the
+     Beyond name / email / company / message it asks the three questions the
+     owner wants for routing and channel analysis: which services the enquiry
+     is about (multi-select, listed from services.js), job title, and how the
      visitor heard about us. Hidden channel fields (UTM, referrer, page,
      form location) ride along on every submission.
 
@@ -11,7 +12,14 @@
 <script>
 	import { sendMessage, deliveryMode } from '$lib/contact.svelte.js';
 	import { contactConfig } from '$lib/content/attencity.js';
-	import { HEARD_FROM, JOB_TITLES, OTHER, attributionPayload, trackLead } from '$lib/lead.js';
+	import {
+		HEARD_FROM,
+		JOB_TITLES,
+		SERVICE_INTERESTS,
+		OTHER,
+		attributionPayload,
+		trackLead
+	} from '$lib/lead.js';
 
 	/** @type {{ variant?: 'dark'|'light', idPrefix?: string, formLocation?: string,
 	 *  submitLabel?: string, ondone?: () => void }} */
@@ -30,6 +38,7 @@
 	let jobTitleOther = $state('');
 	let heardFrom = $state('');
 	let heardFromOther = $state('');
+	let interests = $state([]);
 	let message = $state('');
 	let newsletter = $state(true); // §10 Q9 default: pre-checked, single opt-in
 	let website = $state(''); // honeypot — real people never see this
@@ -43,11 +52,19 @@
 	const firstName = $derived(name.trim().split(' ')[0] || 'there');
 	const jobTitleValue = $derived(jobTitle === OTHER ? jobTitleOther.trim() : jobTitle);
 	const heardFromValue = $derived(heardFrom === OTHER ? heardFromOther.trim() : heardFrom);
+	const interestsValue = $derived(interests.join(', '));
+
+	function toggleInterest(option) {
+		interests = interests.includes(option)
+			? interests.filter((v) => v !== option)
+			: [...interests, option];
+	}
 
 	function validate() {
 		const e = {};
 		if (!name.trim()) e.name = 'Please tell us your name.';
 		if (!EMAIL.test(email.trim())) e.email = 'A valid email is required.';
+		if (!interests.length) e.interests = 'Pick at least one — “Not sure yet” is fine.';
 		if (!jobTitle) e.jobTitle = 'Please choose the closest match.';
 		else if (jobTitle === OTHER && !jobTitleOther.trim()) e.jobTitle = 'Please tell us your role.';
 		if (!heardFrom) e.heardFrom = 'This helps us know what’s working.';
@@ -67,6 +84,7 @@
 			name: name.trim(),
 			email: email.trim(),
 			company: company.trim(),
+			services_interested: interestsValue,
 			job_title: jobTitleValue,
 			heard_from: heardFromValue,
 			message: message.trim(),
@@ -80,7 +98,12 @@
 		}
 		try {
 			result = await sendMessage(payload);
-			trackLead({ jobTitle: jobTitleValue, heardFrom: heardFromValue, formLocation });
+			trackLead({
+				jobTitle: jobTitleValue,
+				heardFrom: heardFromValue,
+				servicesInterested: interestsValue,
+				formLocation
+			});
 		} catch {
 			failed = true;
 		} finally {
@@ -90,6 +113,7 @@
 
 	export function reset() {
 		name = email = company = message = jobTitle = jobTitleOther = heardFrom = heardFromOther = '';
+		interests = [];
 		newsletter = true;
 		errors = {};
 		result = null;
@@ -139,6 +163,24 @@
 					<input id={id('company')} bind:value={company} autocomplete="organization" />
 					<span class="err"></span>
 				</div>
+
+				<fieldset class="field full field-choices" class:invalid={errors.interests}>
+					<legend>What are you interested in? *</legend>
+					<div class="choice-grid">
+						{#each SERVICE_INTERESTS as option (option)}
+							<label class="choice">
+								<input
+									type="checkbox"
+									value={option}
+									checked={interests.includes(option)}
+									onchange={() => toggleInterest(option)}
+								/>
+								<span>{option}</span>
+							</label>
+						{/each}
+					</div>
+					<span class="err">{errors.interests ?? ''}</span>
+				</fieldset>
 
 				<div class="field full" class:invalid={errors.jobTitle}>
 					<label for={id('job')}>Job title *</label>

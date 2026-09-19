@@ -39,6 +39,7 @@ const mailtoBody = (d) =>
 		`Name: ${d.name}`,
 		`Email: ${d.email}`,
 		`Company: ${d.company || '—'}`,
+		`Interested in: ${d.services_interested || '—'}`,
 		`Job title: ${d.job_title || '—'}`,
 		`How they heard about us: ${d.heard_from || '—'}`,
 		`Newsletter opt-in: ${d.newsletter_optin ? 'yes' : 'no'}`,

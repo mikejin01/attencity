@@ -52,6 +52,7 @@ Copy and asset references live in `src/lib/content/`:
 | [`services.js`](src/lib/content/services.js) | The seven services and everything on their landing pages |
 | [`network.js`](src/lib/content/network.js) | Client logos and roster, media-network lists, evidenced placements |
 | [`posts.js`](src/lib/content/posts.js) | Loads `src/content/**/*.md` through mdsvex; sorting, related-content and prev/next helpers |
+| [`testimonials.js`](src/lib/content/testimonials.js) | Signed-off client quotes for the home page (empty until the owner supplies them — the section renders nothing meanwhile) |
 | [`media-sizes.js`](src/lib/content/media-sizes.js) | **Generated** — every image's intrinsic size, so no component hard-codes a width |
 
 Key switches:
@@ -103,6 +104,7 @@ from it, so there is no second list to keep in sync.
 ```bash
 python3 scripts/build-assets.py            # only writes what is missing
 python3 scripts/build-assets.py --force    # re-encode everything
+python3 scripts/build-qr-codes.py          # QR codes for the social accounts that have a URL (needs `pip install segno`)
 ```
 
 It reads `docs/source/deck-media/` and `docs/source/onepager-media/`, and writes:
@@ -174,7 +176,7 @@ src/
   app.css                     reset, modal/form primitives (.theme-editorial tokens)
   content/                    markdown: case-studies/*.md, insights/*.md (mdsvex)
   lib/
-    content/                  attencity.js, services.js, network.js, posts.js, media-sizes.js
+    content/                  attencity.js, services.js, network.js, posts.js, testimonials.js, media-sizes.js
     contact.svelte.js         modal state + delivery (endpoint / mailto / none)
     lead.js                   form option lists, UTM capture, GA4 generate_lead
     actions.js                reveal-on-scroll + lazy-video actions
@@ -198,6 +200,7 @@ src/
     about/  contact/  blog/(redirect)  sitemap.xml/
 infra/lead-worker/            Cloudflare Worker: email + Flodesk relay
 scripts/build-assets.py       source media → shipped assets + media-sizes.js
+scripts/build-qr-codes.py     social-account QR codes from their URLs (keep in step with site.social)
 static/
   CNAME, robots.txt, favicons
   assets/attencity/           events/ work/ press/ clients/ services/ contact/ about/ og/ social/

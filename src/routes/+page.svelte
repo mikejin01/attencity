@@ -7,6 +7,7 @@
 	import SplitFeature from '$lib/editorial/sections/SplitFeature.svelte';
 	import PartnersBand from '$lib/editorial/sections/PartnersBand.svelte';
 	import ClientLogos from '$lib/editorial/sections/ClientLogos.svelte';
+	import Testimonials from '$lib/editorial/sections/Testimonials.svelte';
 	import PostGrid from '$lib/editorial/sections/PostGrid.svelte';
 	import SocialFeed from '$lib/editorial/sections/SocialFeed.svelte';
 	import ContactCta from '$lib/editorial/sections/ContactCta.svelte';
@@ -37,6 +38,7 @@
 	/>
 	<PartnersBand />
 	<ClientLogos />
+	<Testimonials />
 	{#if caseStudiesPage.enabled && recentWork.length}
 		<PostGrid
 			id="recent-work"

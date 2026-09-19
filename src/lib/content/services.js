@@ -235,6 +235,20 @@ export const services = [
 				{ value: '4', label: 'assistants tracked as standard' },
 				{ value: 'Monthly', label: 'visibility re-tests' }
 			],
+			/**
+			 * OWNER TO SUPPLY — owner feedback §2: "Our two GEO results from the
+			 * deck should go on the GEO page too." Neither number is in the
+			 * 2026 Business Deck v1 in docs/, so nothing is claimed here yet.
+			 * Add two entries and the Results section appears on the page:
+			 *   { value: '…', label: '…', context: 'one sentence of what it means' }
+			 * Same shape works on any other service page.
+			 */
+			results: {
+				title: 'Results',
+				lead: 'What the work has moved, measured on the same prompt set each month.',
+				note: 'Model outputs vary by prompt, session and version — figures are the tracked prompt set, not a guarantee.',
+				items: []
+			},
 			faq: [
 				{
 					q: 'Is GEO just SEO with a new name?',

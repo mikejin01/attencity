@@ -602,6 +602,7 @@ function ${P}_handle_lead($request) {
         'name'        => $name,
         'email'       => $email,
         'company'     => sanitize_text_field($p['company'] ?? ''),
+        'interested_in' => sanitize_text_field($p['services_interested'] ?? ''),
         'job_title'   => sanitize_text_field($p['job_title'] ?? ''),
         'heard_from'  => sanitize_text_field($p['heard_from'] ?? ''),
         'newsletter'  => !empty($p['newsletter_optin']) ? 'yes' : 'no',

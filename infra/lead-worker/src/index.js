@@ -21,6 +21,7 @@ const TEXT_FIELDS = [
 	'name',
 	'email',
 	'company',
+	'services_interested',
 	'job_title',
 	'heard_from',
 	'message',
@@ -102,6 +103,7 @@ function emailBody(d) {
 		['Name', d.name],
 		['Email', d.email],
 		['Company', d.company],
+		['Interested in', d.services_interested],
 		['Job title', d.job_title],
 		['Heard about us via', d.heard_from],
 		['Newsletter opt-in', d.newsletter_optin ? 'yes' : 'no'],
@@ -154,6 +156,7 @@ async function upsertFlodesk(d, env, ip) {
 		email: d.email,
 		...splitName(d.name),
 		custom_fields: {
+			services_interested: d.services_interested ?? '',
 			job_title: d.job_title ?? '',
 			heard_from: d.heard_from ?? '',
 			company: d.company ?? '',

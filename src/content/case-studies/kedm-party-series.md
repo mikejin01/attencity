@@ -16,6 +16,28 @@ stats:
     label: 'at one six-hour night'
   - value: '300+'
     label: 'page visits from that night'
+industry: 'Entertainment'
+arc:
+  - stage: 'offline'
+    title: 'A nightlife series, not a night'
+    copy: 'KEDM Party and KEDM After Dark run repeatedly in New York around Asian and K-pop culture — dance-crew performances, spontaneous floor moments and creative giveaways.'
+    metric:
+      value: '2,800+'
+      label: 'at one six-hour night (300–500+ typical)'
+  - stage: 'online'
+    title: 'The floor films itself'
+    copy: 'Performance and audience-participation moments are designed to be shot vertically, so the room produces the promotion for the next event in the series.'
+    metric:
+      value: '300+'
+      label: 'page visits from that one night'
+  - stage: 'press'
+    status: 'next'
+    title: 'A culture story worth pitching'
+    copy: 'A repeatable Asian and K-pop nightlife format in New York is a lifestyle-desk story. The series has the recurrence and the numbers to carry one.'
+  - stage: 'geo'
+    status: 'next'
+    title: 'The recommendation engine for nightlife'
+    copy: '“Where do I go for K-pop nights in New York” is now asked of an assistant as often as of a friend. Being the named answer is a source problem, not a marketing one.'
 gallery:
   - file: 'work/kedm-2.webp'
     alt: 'A dancing crowd at a KEDM party'

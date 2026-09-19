@@ -89,19 +89,47 @@ export const site = {
 		areaServed: ['United States', 'China']
 	},
 	/** `href: ''` renders as a QR/handle instead of a link. `hidden` keeps an
-	 *  account out of the site entirely (§10 Q3 — personal WeChat). */
+	 *  account out of the site entirely (§10 Q3 — personal WeChat).
+	 *  Every visible account carries a `qr`, so the contact page can offer one
+	 *  for all of them. Instagram, Xiaohongshu and WeChat use the cards those
+	 *  apps export; the rest are generated from the URL by
+	 *  scripts/build-qr-codes.py — keep the two lists in step. */
 	social: [
 		{
 			name: 'Instagram',
 			icon: 'instagram',
 			handle: '@attencitymarketing',
-			href: 'https://www.instagram.com/attencitymarketing/'
+			href: 'https://www.instagram.com/attencitymarketing/',
+			qr: 'contact/instagram-qr.webp',
+			qrAlt: 'Instagram nametag QR code for @attencitymarketing'
 		},
 		{
 			name: 'TikTok',
 			icon: 'tiktok',
 			handle: '@attencity_marketing',
-			href: 'https://www.tiktok.com/@attencity_marketing'
+			href: 'https://www.tiktok.com/@attencity_marketing',
+			qr: 'contact/tiktok-qr.webp',
+			qrAlt: 'QR code linking to the TikTok profile @attencity_marketing'
+		},
+		{
+			name: 'LinkedIn',
+			icon: 'linkedin',
+			handle: 'Attencity Marketing',
+			href: 'https://www.linkedin.com/company/attencity',
+			qr: 'contact/linkedin-qr.webp',
+			qrAlt: 'QR code linking to the Attencity Marketing LinkedIn company page'
+		},
+		{
+			// The published business line. Confirm it is the number that actually
+			// receives WhatsApp before this goes out; `href` and the QR are both
+			// regenerated from `contact.phone` if it changes.
+			name: 'WhatsApp',
+			icon: 'whatsapp',
+			handle: '+1 (332) 999-3472',
+			note: 'Message us on WhatsApp',
+			href: 'https://wa.me/13329993472',
+			qr: 'contact/whatsapp-qr.webp',
+			qrAlt: 'QR code that opens a WhatsApp chat with Attencity'
 		},
 		{
 			name: 'Xiaohongshu (RedNote)',
@@ -491,7 +519,8 @@ export const caseStudiesPage = {
 		image: 'work/soho-popup-1.webp'
 	},
 	intro: 'Pop-ups, launches, creator parties and cross-border PR programmes we planned and ran. Every entry lists the venue, the date and what it actually produced.',
-	filterAll: 'All work'
+	/** The "no filter" chip, shown on both the service and industry rows. */
+	filterAll: 'All'
 };
 
 export const insightsPage = {

@@ -12,7 +12,12 @@
 //   services[]        — service slugs this entry is proof for
 //   gallery[]         — { file, alt } photos rendered under the body
 //   seoTitle, seoDescription
-// Case studies additionally use: client, location, dateLabel, stats[]
+// Case studies additionally use:
+//   client, location, dateLabel, stats[]
+//   industry          — one label from INDUSTRIES, for the listing filter
+//   arc[]             — the offline → online → press → GEO story, see ARC_STAGES
+//   testimonial       — optional signed-off client quote, shape as in
+//                       content/testimonials.js
 // Insights additionally use: author, dateLabel
 // =====================================================================
 
@@ -80,3 +85,73 @@ export const formatDate = (iso) =>
 		day: 'numeric',
 		timeZone: 'UTC'
 	});
+
+// ---------------------------------------------------------------------
+// Tagging (owner feedback §4): every case study is filed under the services
+// it proves and the industry its client sits in, so the listing can be
+// filtered on both once the archive grows.
+// ---------------------------------------------------------------------
+
+/** Service slug → the short label used on cards and filter chips. */
+export const SERVICE_TAGS = {
+	'events-activations': 'Events',
+	'media-pr': 'PR',
+	'social-influencer-marketing': 'Social',
+	'geo-generative-engine-optimization': 'GEO',
+	'brand-strategy-localization': 'Brand',
+	'ecommerce-growth': 'E-commerce',
+	'personal-branding': 'Personal branding'
+};
+
+/** The industry vocabulary. Keep `industry` in frontmatter to this list. */
+export const INDUSTRIES = ['Beauty', 'Tech', 'F&B', 'Retail', 'Entertainment', 'Finance'];
+
+/** Short service labels for one post, in the site's service order. */
+export const serviceTags = (post) =>
+	Object.keys(SERVICE_TAGS)
+		.filter((slug) => post.services?.includes(slug))
+		.map((slug) => SERVICE_TAGS[slug]);
+
+/**
+ * The service and industry filter options actually in use, so a chip never
+ * points at an empty result. Returns `{ services, industries }` of labels.
+ */
+export function filterOptions(list) {
+	const services = Object.values(SERVICE_TAGS).filter((label) =>
+		list.some((p) => serviceTags(p).includes(label))
+	);
+	const industries = INDUSTRIES.filter((label) => list.some((p) => p.industry === label));
+	return { services, industries };
+}
+
+/** `service` / `industry` are labels from the above, or '' for "all". */
+export const filterPosts = (list, { service = '', industry = '' } = {}) =>
+	list.filter(
+		(p) =>
+			(!service || serviceTags(p).includes(service)) && (!industry || p.industry === industry)
+	);
+
+// ---------------------------------------------------------------------
+// The arc (owner feedback §1–2): activation creates the raw material →
+// creators and social carry it online → press picks it up → GEO turns it
+// into an asset AI can cite. Every case study tells its story along these
+// four stages, with one number per stage where we have one.
+//
+// A stage carries `status: 'next'` when that step was not part of the
+// engagement. It still renders — the arc is the product — but as the step
+// that follows rather than as something claimed to have been delivered.
+// ---------------------------------------------------------------------
+export const ARC_STAGES = {
+	offline: { label: 'Offline', title: 'Activation' },
+	online: { label: 'Online', title: 'Creators & social' },
+	press: { label: 'Press', title: 'Earned coverage' },
+	geo: { label: 'GEO', title: 'An asset AI can cite' }
+};
+
+/** Frontmatter arc entries in canonical stage order, unknown stages dropped. */
+export const arcOf = (post) => {
+	const order = Object.keys(ARC_STAGES);
+	return (post.arc ?? [])
+		.filter((s) => order.includes(s.stage))
+		.sort((a, b) => order.indexOf(a.stage) - order.indexOf(b.stage));
+};
