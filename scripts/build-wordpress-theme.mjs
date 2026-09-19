@@ -620,10 +620,13 @@ function ${P}_handle_lead($request) {
         'message'     => $message,
     );
 
+    // ucwords() on the raw keys produced "Interested In" / "Heard From"; spell
+    // the labels out instead. Used for the stored lead and the email alike.
+    $labels = ${P}_lead_labels();
     $body = '';
     foreach ($fields as $k => $v) {
         if ($k === 'message') continue;
-        $body .= ucwords(str_replace('_', ' ', $k)) . ': ' . ($v === '' ? '—' : $v) . "\\n";
+        $body .= ($labels[$k] ?? ucwords(str_replace('_', ' ', $k))) . ': ' . ($v === '' ? '—' : $v) . "\\n";
     }
     $body .= "\\n" . $message . "\\n";
 
@@ -643,7 +646,13 @@ function ${P}_handle_lead($request) {
     // submission so changing it there needs no code change.
     $to = get_option('${P}_global_contact_email', '');
     if ($to && is_email($to)) {
-        $sent = ${P}_send_lead_mail($to, $name, $email, $body);
+        $brand = get_option('${P}_global_business_name', '') ?: 'Attencity';
+        $sent  = ${P}_send_lead_mail(
+            $to,
+            sprintf('[%s] New enquiry: %s', $brand, $name),
+            ${P}_lead_email_html($fields, $message, (int) $post_id),
+            $name . ' <' . $email . '>'
+        );
         update_post_meta($post_id, 'lead_emailed', $sent ? 'yes' : 'no');
     } else {
         update_post_meta($post_id, 'lead_emailed', 'no-address');
@@ -659,10 +668,10 @@ function ${P}_handle_lead($request) {
  * recorded in an option so the admin page can say so, rather than the enquiry
  * sitting under Leads with nobody aware it arrived.
  *
- * The From address is set to the site's own domain: the default
- * wordpress@<host> is a frequent cause of rejection and spam filing.
+ * From is admin@<the site's own domain>. The wordpress@<host> default is a
+ * frequent cause of rejection and spam filing.
  */
-function ${P}_send_lead_mail($to, $name, $from_email, $body) {
+function ${P}_send_lead_mail($to, $subject, $html, $reply_to = '') {
     $brand = get_option('${P}_global_business_name', '') ?: wp_parse_url(home_url(), PHP_URL_HOST);
     $host  = wp_parse_url(home_url(), PHP_URL_HOST);
     $host  = preg_replace('/^www\\./i', '', (string) $host);
@@ -673,16 +682,15 @@ function ${P}_send_lead_mail($to, $name, $from_email, $body) {
     };
     add_action('wp_mail_failed', $capture);
 
-    $sent = wp_mail(
-        $to,
-        sprintf('[%s] New enquiry: %s', $brand, $name),
-        $body,
-        array(
-            'Content-Type: text/plain; charset=UTF-8',
-            sprintf('From: %s <no-reply@%s>', $brand, $host),
-            'Reply-To: ' . $name . ' <' . $from_email . '>',
-        )
+    $headers = array(
+        'Content-Type: text/html; charset=UTF-8',
+        sprintf('From: %s <admin@%s>', $brand, $host),
     );
+    if ($reply_to !== '') {
+        $headers[] = 'Reply-To: ' . $reply_to;
+    }
+
+    $sent = wp_mail($to, $subject, $html, $headers);
 
     remove_action('wp_mail_failed', $capture);
 
@@ -694,6 +702,99 @@ function ${P}_send_lead_mail($to, $name, $from_email, $body) {
     ), false);
 
     return (bool) $sent;
+}
+
+/** Field key -> the label a person should read, for the email and the lead. */
+function ${P}_lead_labels() {
+    return array(
+        'name'          => 'Name',
+        'email'         => 'Email',
+        'company'       => 'Company',
+        'interested_in' => 'Interested in',
+        'job_title'     => 'Job title',
+        'heard_from'    => 'Heard about us via',
+        'newsletter'    => 'Newsletter opt-in',
+        'page'          => 'Submitted from',
+    );
+}
+
+/** One label/value row of the notification table. Empty values are skipped. */
+function ${P}_lead_row($label, $value, $kind = '') {
+    if ($value === '' || $value === null) return '';
+    $v = esc_html($value);
+    if ($kind === 'email') {
+        $v = '<a href="mailto:' . esc_attr($value) . '" style="color:#c53d00;text-decoration:none;">' . $v . '</a>';
+    } elseif ($kind === 'url') {
+        $v = '<a href="' . esc_url($value) . '" style="color:#c53d00;text-decoration:none;">' . $v . '</a>';
+    }
+    return '<tr>'
+        . '<td style="padding:7px 18px 7px 0;color:#6e6e73;font-size:13px;line-height:1.5;'
+        . 'white-space:nowrap;vertical-align:top;">' . esc_html($label) . '</td>'
+        . '<td style="padding:7px 0;color:#141416;font-size:14px;line-height:1.5;'
+        . 'vertical-align:top;">' . $v . '</td>'
+        . '</tr>';
+}
+
+/**
+ * The enquiry notification as a small branded card.
+ *
+ * Table-based with inline styles because that is what mail clients render
+ * predictably — no stylesheet, no flexbox, no shorthand they might drop.
+ */
+function ${P}_lead_email_html($f, $message, $post_id) {
+    $brand = get_option('${P}_global_business_name', '') ?: 'Attencity';
+    $page  = ($f['page'] ?? '') !== '' ? home_url($f['page']) : home_url('/');
+    $edit  = $post_id
+        ? admin_url('post.php?post=' . (int) $post_id . '&action=edit')
+        : admin_url('edit.php?post_type=lead_submission');
+
+    $rows  = ${P}_lead_row('Email', $f['email'] ?? '', 'email');
+    $rows .= ${P}_lead_row('Company', $f['company'] ?? '');
+    $rows .= ${P}_lead_row('Interested in', $f['interested_in'] ?? '');
+    $rows .= ${P}_lead_row('Job title', $f['job_title'] ?? '');
+    $rows .= ${P}_lead_row('Heard about us via', $f['heard_from'] ?? '');
+    $rows .= ${P}_lead_row('Newsletter', ($f['newsletter'] ?? '') === 'yes' ? 'Opted in' : 'No');
+    $rows .= ${P}_lead_row('Submitted from', $page, 'url');
+
+    $who = esc_html($f['name'] ?? '');
+    $sub = ($f['company'] ?? '') !== '' ? esc_html($f['company']) : esc_html($f['email'] ?? '');
+
+    $html  = '<div style="margin:0;padding:24px 12px;background:#f2f2f4;'
+           . 'font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">';
+    $html .= '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" '
+           . 'style="max-width:560px;margin:0 auto;border-collapse:separate;">';
+
+    $html .= '<tr><td style="background:#17181b;border-radius:12px 12px 0 0;padding:22px 26px;">'
+           . '<div style="color:#ff5000;font-size:11px;font-weight:700;letter-spacing:1.6px;'
+           . 'text-transform:uppercase;">New enquiry</div>'
+           . '<div style="color:#ffffff;font-size:23px;font-weight:700;padding-top:6px;">' . $who . '</div>'
+           . '<div style="color:#b4b4b8;font-size:14px;padding-top:3px;">' . $sub . '</div>'
+           . '</td></tr>';
+
+    $html .= '<tr><td style="background:#ffffff;padding:22px 26px 8px;">'
+           . '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">'
+           . $rows . '</table></td></tr>';
+
+    if ($message !== '') {
+        $html .= '<tr><td style="background:#ffffff;padding:8px 26px 22px;">'
+               . '<div style="color:#6e6e73;font-size:11px;font-weight:700;letter-spacing:1.4px;'
+               . 'text-transform:uppercase;padding-bottom:9px;">Message</div>'
+               . '<div style="border-left:3px solid #ff5000;padding:2px 0 2px 15px;color:#141416;'
+               . 'font-size:15px;line-height:1.6;">' . nl2br(esc_html($message)) . '</div>'
+               . '</td></tr>';
+    }
+
+    $html .= '<tr><td style="background:#ffffff;border-radius:0 0 12px 12px;'
+           . 'border-top:1px solid #ececef;padding:18px 26px;">'
+           . '<a href="' . esc_url($edit) . '" style="display:inline-block;background:#ff5000;'
+           . 'color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;'
+           . 'padding:11px 20px;border-radius:999px;">Open in the dashboard</a></td></tr>';
+
+    $html .= '<tr><td style="padding:15px 26px;color:#8a8a8f;font-size:12px;line-height:1.5;'
+           . 'text-align:center;">' . esc_html($brand)
+           . ' &middot; reply to this email to answer ' . $who . ' directly</td></tr>';
+
+    return $html . '</table></div>';
 }
 
 add_filter('manage_lead_submission_posts_columns', function ($cols) {
@@ -1013,12 +1114,27 @@ add_action('admin_init', function () {
         check_admin_referer('${P}_test_email');
         $to = get_option('${P}_global_contact_email', '');
         if ($to && is_email($to)) {
+            // Sent through the same function and template as a real enquiry, so
+            // what arrives is what a lead will look like.
+            $brand = get_option('${P}_global_business_name', '') ?: 'Attencity';
             ${P}_send_lead_mail(
                 $to,
-                'Test message',
-                $to,
-                "This is a test of the enquiry notification email.\\n\\n"
-                . "If it reached you, leads from the website will too.\\n"
+                sprintf('[%s] Test: enquiry notifications are working', $brand),
+                ${P}_lead_email_html(
+                    array(
+                        'name'          => 'Test enquiry',
+                        'email'         => $to,
+                        'company'       => 'Sent from the Attencity Setup page',
+                        'interested_in' => 'Events & Activations',
+                        'job_title'     => 'Founder / C-level',
+                        'heard_from'    => 'Google / search',
+                        'newsletter'    => 'yes',
+                        'page'          => '/contact/',
+                    ),
+                    'This is a test. A real enquiry arrives looking exactly like this, '
+                    . 'with the visitor in the Reply-To so you can answer them directly.',
+                    0
+                )
             );
         }
         wp_redirect(add_query_arg('${P}_tested', '1', admin_url('admin.php?page=${P}-admin')));
