@@ -30,10 +30,14 @@ const THEME = {
 	description:
 		'The Attencity SvelteKit site compiled into a WordPress theme. Generated — do not hand-edit.',
 	author: 'X.O.',
+	// `prefix` keys every stored option (xo_global_contact_email, the content
+	// overrides, the saved leads' meta), the admin menu slug and the function
+	// names. Renaming it orphans all of that on a live site — it is not the
+	// display name. The two labels below are.
 	prefix: 'xo',
 	restNamespace: 'xo/v1',
-	adminPageTitle: 'X.O. Admin',
-	adminMenuLabel: 'X.O. Admin'
+	adminPageTitle: 'Attencity Setup',
+	adminMenuLabel: 'Attencity Setup'
 };
 
 const P = THEME.prefix;
