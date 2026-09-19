@@ -208,7 +208,13 @@ Text Domain: ${THEME.slug}
    data-attencity-theme is how assetRoot() in src/lib/wp/runtime.js finds the
    theme directory. An attribute is used rather than an inline script because an
    <img src> resolves the instant it renders and cannot wait for a script that
-   an optimisation plugin may have deferred or stripped. */
+   an optimisation plugin may have deferred or stripped.
+
+   body_class() is passed 'theme-editorial' because that is the class
+   src/app.html puts on <body> in the static build, and every token behind the
+   shared contact modal and form fields (--surface, --text, --border,
+   --radius-lg, --shadow) is declared on it in app.css. Without it the modal
+   renders with no background and unreadable text. */
 write(
 	'header.php',
 	`${BANNER}?>
@@ -224,7 +230,7 @@ write(
 	${themify(appAssetTags)}
 <?php wp_head(); ?>
 </head>
-<body <?php body_class(); ?> data-attencity-theme="<?php echo esc_url(get_template_directory_uri()); ?>">
+<body <?php body_class('theme-editorial'); ?> data-attencity-theme="<?php echo esc_url(get_template_directory_uri()); ?>">
 `
 );
 
@@ -633,15 +639,57 @@ function ${P}_handle_lead($request) {
     // submission so changing it there needs no code change.
     $to = get_option('${P}_global_contact_email', '');
     if ($to && is_email($to)) {
-        $brand = get_option('${P}_global_business_name', '') ?: wp_parse_url(home_url(), PHP_URL_HOST);
-        wp_mail(
-            $to,
-            sprintf('[%s] New enquiry: %s', $brand, $name),
-            $body,
-            array('Content-Type: text/plain; charset=UTF-8', 'Reply-To: ' . $name . ' <' . $email . '>')
-        );
+        $sent = ${P}_send_lead_mail($to, $name, $email, $body);
+        update_post_meta($post_id, 'lead_emailed', $sent ? 'yes' : 'no');
+    } else {
+        update_post_meta($post_id, 'lead_emailed', 'no-address');
     }
     return new WP_REST_Response(array('success' => true, 'id' => (int) $post_id), 200);
+}
+
+/**
+ * Send one notification and remember what happened.
+ *
+ * wp_mail() returning false — or the host accepting the message and dropping
+ * it — is the usual way a site quietly stops delivering leads. The failure is
+ * recorded in an option so the admin page can say so, rather than the enquiry
+ * sitting under Leads with nobody aware it arrived.
+ *
+ * The From address is set to the site's own domain: the default
+ * wordpress@<host> is a frequent cause of rejection and spam filing.
+ */
+function ${P}_send_lead_mail($to, $name, $from_email, $body) {
+    $brand = get_option('${P}_global_business_name', '') ?: wp_parse_url(home_url(), PHP_URL_HOST);
+    $host  = wp_parse_url(home_url(), PHP_URL_HOST);
+    $host  = preg_replace('/^www\\./i', '', (string) $host);
+
+    $failure = '';
+    $capture = function ($wp_error) use (&$failure) {
+        $failure = $wp_error instanceof WP_Error ? $wp_error->get_error_message() : 'Unknown error';
+    };
+    add_action('wp_mail_failed', $capture);
+
+    $sent = wp_mail(
+        $to,
+        sprintf('[%s] New enquiry: %s', $brand, $name),
+        $body,
+        array(
+            'Content-Type: text/plain; charset=UTF-8',
+            sprintf('From: %s <no-reply@%s>', $brand, $host),
+            'Reply-To: ' . $name . ' <' . $from_email . '>',
+        )
+    );
+
+    remove_action('wp_mail_failed', $capture);
+
+    update_option('${P}_mail_last', array(
+        'ok'   => (bool) $sent,
+        'to'   => $to,
+        'when' => current_time('mysql'),
+        'why'  => $sent ? '' : ($failure ?: 'wp_mail() returned false'),
+    ), false);
+
+    return (bool) $sent;
 }
 
 add_filter('manage_lead_submission_posts_columns', function ($cols) {
@@ -942,6 +990,22 @@ add_action('admin_init', function () {
         exit;
     }
 
+    if (isset($_POST['${P}_test_email'])) {
+        check_admin_referer('${P}_test_email');
+        $to = get_option('${P}_global_contact_email', '');
+        if ($to && is_email($to)) {
+            ${P}_send_lead_mail(
+                $to,
+                'Test message',
+                $to,
+                "This is a test of the enquiry notification email.\\n\\n"
+                . "If it reached you, leads from the website will too.\\n"
+            );
+        }
+        wp_redirect(add_query_arg('${P}_tested', '1', admin_url('admin.php?page=${P}-admin')));
+        exit;
+    }
+
     if (isset($_POST['${P}_repair_pages'])) {
         check_admin_referer('${P}_repair_pages');
         ${P}_ensure_pages();
@@ -967,6 +1031,24 @@ function ${P}_render_admin_page() {
     if (!$email || !is_email($email)) {
         echo '<div class="notice notice-warning"><p><strong>No notification email set.</strong> '
            . 'Enquiries are still saved under Leads, but nothing is emailed until you set an address below.</p></div>';
+    }
+
+    // What happened to the most recent notification. A silent wp_mail() failure
+    // is the usual reason a site stops delivering leads without anyone noticing.
+    $mail = get_option('${P}_mail_last', array());
+    if (isset($_GET['${P}_tested'])) {
+        if (!empty($mail['ok'])) {
+            echo '<div class="updated notice is-dismissible"><p>Test email handed to the mail server for <strong>'
+               . esc_html($mail['to']) . '</strong>. If it does not arrive, check spam, then your host\\'s mail or SMTP setup.</p></div>';
+        } else {
+            echo '<div class="notice notice-error"><p><strong>Test email failed.</strong> '
+               . esc_html($mail['why'] ?? '') . '</p></div>';
+        }
+    } elseif (!empty($mail) && empty($mail['ok'])) {
+        echo '<div class="notice notice-error"><p><strong>The last enquiry could not be emailed</strong> ('
+           . esc_html($mail['when'] ?? '') . '): ' . esc_html($mail['why'] ?? '')
+           . '. The lead is safe under Leads. WordPress sends through the host\\'s mail server — '
+           . 'installing an SMTP plugin is the usual fix.</p></div>';
     }
 
     $permalinks = get_option('permalink_structure');
@@ -1005,6 +1087,21 @@ function ${P}_render_admin_page() {
                     <input type="hidden" name="${P}_save_details" value="1">
                     <?php submit_button('Save changes'); ?>
                 </form>
+                <?php if ($email && is_email($email)) : ?>
+                    <form method="post" style="margin-top:-12px;">
+                        <?php wp_nonce_field('${P}_test_email'); ?>
+                        <input type="hidden" name="${P}_test_email" value="1">
+                        <?php submit_button('Send a test email', 'secondary', 'submit', false); ?>
+                        <p class="description" style="margin-top:6px;">
+                            Sends one message to <strong><?php echo esc_html($email); ?></strong> so you can confirm
+                            enquiries will arrive.
+                            <?php if (!empty($mail['when'])) : ?>
+                                Last attempt <?php echo esc_html($mail['when']); ?> —
+                                <?php echo !empty($mail['ok']) ? 'accepted.' : 'failed.'; ?>
+                            <?php endif; ?>
+                        </p>
+                    </form>
+                <?php endif; ?>
             </div>
 
             <div style="display:flex;flex-direction:column;gap:20px;">
